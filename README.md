@@ -1,13 +1,26 @@
 # SpeakUp AI
 
-SpeakUp AI is an AI-powered voice interviewer for realistic, role-specific mock interviews. It scores answers against a customizable rubric and provides immediate feedback.
+SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository currently contains a Next.js frontend starter, a FastAPI health endpoint, and documented scoring-rubric and prompt designs. Voice interview capture, model integration, and automated answer scoring are not implemented yet.
 
-## Project structure
+## Project Links
 
-- `frontend/`: Next.js App Router application.
-- `backend/`: FastAPI service.
+- [GitHub repository](https://github.com/nabeel1626/Speakup-AI)
+- [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) for project settings and deployments
+- [Scoring rubric and prompt design](docs/scoring-rubric-and-prompt-design.md)
 
-## Local development
+The Vercel link opens the project dashboard, not the public application. Use the URL shown for a successful deployment to share the live frontend.
+
+## Current Status
+
+| Area | Current implementation |
+| --- | --- |
+| Frontend | Next.js App Router starter application in `frontend/`. |
+| Backend | FastAPI service in `backend/`; currently exposes `GET /api/health`. |
+| Scoring | Role-specific rubric and prompt design are documented; scoring is not connected to the application. |
+
+## Run Locally
+
+Install Node.js with npm and Python before starting the services. Run each service in a separate PowerShell terminal.
 
 ### Frontend
 
@@ -17,38 +30,39 @@ npm install
 npm run dev
 ```
 
-Frontend health check: `http://localhost:3000/api/health`
+Open [http://localhost:3000](http://localhost:3000).
 
 ### Backend
 
 ```powershell
 cd backend
 py -m venv .venv
-.venv\\Scripts\\Activate.ps1
+.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-Backend health check: `http://localhost:8000/api/health`
+The backend health endpoint is [http://localhost:8000/api/health](http://localhost:8000/api/health) and returns:
+
+```json
+{"status":"ok","service":"backend"}
+```
 
 ## Deployment
 
 ### Vercel
 
-Project dashboard: [SpeakUp AI](https://vercel.com/sspeakup-ai/speakup-ai).
-
-1. Import the repository in Vercel.
-2. Set the project root directory to `frontend`.
-3. Keep the detected Next.js build settings and deploy.
-4. Verify `https://<your-vercel-domain>/api/health` returns `{ "status": "ok" }`.
+The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The frontend project root is `frontend/`. The public deployment URL is available from the deployment details in Vercel.
 
 ### Render
 
-1. Create a new Render Web Service from the repository.
-2. Set the root directory to `backend`.
-3. Use `pip install -r requirements.txt` as the build command.
-4. Use `uvicorn main:app --host 0.0.0.0 --port $PORT` as the start command.
-5. Set `FRONTEND_URL` to the deployed Vercel URL.
-6. Verify `https://<your-render-domain>/api/health` returns `{ "status": "ok" }`.
+The backend service configuration is maintained in [backend/render.yaml](backend/render.yaml). It defines the install command, Uvicorn start command, and `/api/health` health check. Set `FRONTEND_URL` in the Render service environment to the deployed frontend origin so the backend CORS policy allows the frontend.
 
-Render's free service sleeps after inactivity, so the first request after a quiet period may take longer.
+Render dashboard and deployed service URLs are not listed here yet; add the direct links once they are available.
+
+## Documentation
+
+- [Next.js documentation](https://nextjs.org/docs)
+- [FastAPI documentation](https://fastapi.tiangolo.com/)
+- [Vercel deployment documentation](https://vercel.com/docs/deployments)
+- [Render documentation](https://docs.render.com/)
