@@ -35,6 +35,8 @@ Backend health check: `http://localhost:8000/api/health`
 
 ### Vercel
 
+Project dashboard: [SpeakUp AI](https://vercel.com/sspeakup-ai/speakup-ai).
+
 1. Import the repository in Vercel.
 2. Set the project root directory to `frontend`.
 3. Keep the detected Next.js build settings and deploy.
