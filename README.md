@@ -52,17 +52,10 @@ The backend health endpoint is [http://localhost:8000/api/health](http://localho
 
 ### Vercel
 
-The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The frontend project root is `frontend/`. The public deployment URL is available from the deployment details in Vercel.
-
-### Render
-
-The backend service configuration is maintained in [backend/render.yaml](backend/render.yaml). It defines the install command, Uvicorn start command, and `/api/health` health check. Set `FRONTEND_URL` in the Render service environment to the deployed frontend origin so the backend CORS policy allows the frontend.
-
-Render dashboard and deployed service URLs are not listed here yet; add the direct links once they are available.
+The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The Vercel project root is `frontend/`; the public application URL is shown in the project's deployment details. The FastAPI backend is currently available for local development only and is not configured for deployment to Vercel.
 
 ## Documentation
 
 - [Next.js documentation](https://nextjs.org/docs)
 - [FastAPI documentation](https://fastapi.tiangolo.com/)
 - [Vercel deployment documentation](https://vercel.com/docs/deployments)
-- [Render documentation](https://docs.render.com/)
