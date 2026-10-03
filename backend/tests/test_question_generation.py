@@ -7,26 +7,24 @@ from fastapi.testclient import TestClient
 import main
 
 
-class FakeCompletions:
+class FakeModels:
     def __init__(self, content_responses: list[str]):
         self.content_responses = content_responses
         self.calls = []
 
-    async def create(self, **kwargs):
+    async def generate_content(self, **kwargs):
         self.calls.append(kwargs)
         content = self.content_responses.pop(0)
-        return SimpleNamespace(
-            choices=[SimpleNamespace(message=SimpleNamespace(content=content))]
-        )
+        return SimpleNamespace(text=content)
 
 
-class FakeAsyncOpenAI:
-    completions: FakeCompletions
+class FakeAsyncGemini:
+    models: FakeModels
 
     def __init__(self, **_kwargs):
-        self.chat = SimpleNamespace(completions=self.completions)
+        self.aio = SimpleNamespace(models=self.models, aclose=self.aclose)
 
-    async def close(self):
+    async def aclose(self):
         return None
 
 
@@ -47,9 +45,9 @@ def test_five_role_level_combinations_return_five_questions():
 
     with TestClient(main.app) as client:
         for role, level in cases:
-            FakeAsyncOpenAI.completions = FakeCompletions([make_json_response()])
-            with patch.object(main, "AsyncOpenAI", FakeAsyncOpenAI), patch.dict(
-                "os.environ", {"OPENAI_API_KEY": "test-key"}
+            FakeAsyncGemini.models = FakeModels([make_json_response()])
+            with patch.object(main.genai, "Client", FakeAsyncGemini), patch.dict(
+                "os.environ", {"GEMINI_API_KEY": "test-key"}
             ):
                 response = client.post(
                     "/api/generate-questions",
@@ -62,21 +60,22 @@ def test_five_role_level_combinations_return_five_questions():
             assert body["level"] == level
             assert len(body["questions"]) == 5
             assert body["source"] == "model"
-            call = FakeAsyncOpenAI.completions.calls[0]
-            assert call["model"] == "gpt-4o-mini"
-            assert call["response_format"] == {"type": "json_object"}
-            assert role in call["messages"][0]["content"]
-            assert level.lower() in call["messages"][0]["content"].lower()
+            call = FakeAsyncGemini.models.calls[0]
+            assert call["model"] == "gemini-3.8-flash"
+            assert call["config"].response_mime_type == "application/json"
+            assert call["config"].response_schema is not None
+            assert role in call["config"].system_instruction
+            assert level.lower() in call["config"].system_instruction.lower()
 
 
 def test_invalid_json_retries_then_returns_fallback():
-    FakeAsyncOpenAI.completions = FakeCompletions(
+    FakeAsyncGemini.models = FakeModels(
         ["not json", json.dumps({"questions": ["Only one question?"]})]
     )
 
     with TestClient(main.app) as client, patch.object(
-        main, "AsyncOpenAI", FakeAsyncOpenAI
-    ), patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"}):
+        main.genai, "Client", FakeAsyncGemini
+    ), patch.dict("os.environ", {"GEMINI_API_KEY": "test-key"}):
         response = client.post(
             "/api/generate-questions",
             json={"role": "Data Analyst", "level": "Mid-level"},
@@ -86,10 +85,10 @@ def test_invalid_json_retries_then_returns_fallback():
     body = response.json()
     assert body["source"] == "fallback"
     assert len(body["questions"]) == 5
-    assert len(FakeAsyncOpenAI.completions.calls) == 2
-    assert "previous response was not valid" in FakeAsyncOpenAI.completions.calls[1][
-        "messages"
-    ][0]["content"]
+    assert len(FakeAsyncGemini.models.calls) == 2
+    assert "previous response did not satisfy" in FakeAsyncGemini.models.calls[1][
+        "config"
+    ].system_instruction
 
 
 def test_missing_api_key_returns_service_unavailable():

@@ -1,6 +1,7 @@
 from typing import Literal
 
-from openai import AsyncOpenAI
+from google import genai
+from google.genai import types
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 Role = Literal["Frontend Developer", "Data Analyst"]
@@ -115,23 +116,32 @@ FALLBACK_QUESTIONS: dict[tuple[Role, Level], list[str]] = {
     ],
 }
 
+GEMINI_RESPONSE_SCHEMA = {
+    "type": "OBJECT",
+    "properties": {
+        "questions": {
+            "type": "ARRAY",
+            "items": {"type": "STRING"},
+        }
+    },
+    "required": ["questions"],
+}
+
 STRICT_JSON_REMINDER = (
-    "The previous response was not valid for the required format. Return only one "
-    'JSON object with exactly five distinct, non-empty string values in the "questions" '
-    "array. Do not include markdown, explanations, or additional keys."
+    "The previous response did not satisfy the output requirements. Return exactly "
+    "five distinct, non-empty questions matching the response schema. Do not include "
+    "markdown or explanatory text."
 )
 
 
 async def generate_question_response(
     request: GenerateQuestionsRequest,
-    client: AsyncOpenAI,
+    client: genai.Client,
 ) -> GenerateQuestionsResponse:
     prompt = PROMPT_TEMPLATES[(request.role, request.level)]
     user_prompt = (
         f"Generate exactly five distinct interview questions for the role "
-        f"{request.role} at the {request.level} level. Return a JSON object "
-        '{"questions": ["question 1", "question 2", "question 3", '
-        '"question 4", "question 5"]}. Do not include answers.'
+        f"{request.role} at the {request.level} level. Do not include answers."
     )
 
     for attempt in range(2):
@@ -139,17 +149,17 @@ async def generate_question_response(
         if attempt:
             system_prompt = f"{prompt}\n\n{STRICT_JSON_REMINDER}"
 
-        completion = await client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt},
-            ],
-            response_format={"type": "json_object"},
+        response = await client.aio.models.generate_content(
+            model="gemini-3.8-flash",
+            contents=user_prompt,
+            config=types.GenerateContentConfig(
+                system_instruction=system_prompt,
+                response_mime_type="application/json",
+                response_schema=GEMINI_RESPONSE_SCHEMA,
+            ),
         )
-        content = completion.choices[0].message.content if completion.choices else None
         try:
-            generated = GeneratedQuestionSet.model_validate_json(content or "")
+            generated = GeneratedQuestionSet.model_validate_json(response.text or "")
         except ValueError:
             continue
 

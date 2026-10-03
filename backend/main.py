@@ -2,7 +2,8 @@ import os
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from openai import APIError, AsyncOpenAI
+from google import genai
+from google.genai import errors
 
 from question_generation import (
     GenerateQuestionsRequest,
@@ -31,20 +32,20 @@ def health() -> dict[str, str]:
 async def generate_questions(
     request: GenerateQuestionsRequest,
 ) -> GenerateQuestionsResponse:
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("GEMINI_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=503,
-            detail="Question generation is unavailable until OPENAI_API_KEY is configured.",
+            detail="Question generation is unavailable until GEMINI_API_KEY is configured.",
         )
 
-    client = AsyncOpenAI(api_key=api_key)
+    client = genai.Client(api_key=api_key)
     try:
         return await generate_question_response(request, client)
-    except APIError as exc:
+    except errors.APIError as exc:
         raise HTTPException(
             status_code=502,
             detail="The question generation provider could not complete the request.",
         ) from exc
     finally:
-        await client.close()
+        await client.aio.aclose()

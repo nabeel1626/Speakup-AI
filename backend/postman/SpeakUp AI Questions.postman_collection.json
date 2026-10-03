@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "SpeakUp AI - Question Generation",
-    "description": "Exercises five supported role and level combinations. Start the FastAPI backend and configure OPENAI_API_KEY before running the collection.",
+    "description": "Exercises five supported role and level combinations. Start the FastAPI backend and configure GEMINI_API_KEY before running the collection.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
