@@ -1,6 +1,6 @@
 # SpeakUp AI
 
-SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository currently contains a Next.js frontend starter, a FastAPI health endpoint, and documented scoring-rubric and prompt designs. Voice interview capture, model integration, and automated answer scoring are not implemented yet.
+SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository contains a Next.js frontend starter, a FastAPI health and question-generation API, and documented scoring-rubric and prompt designs. Voice interview capture and automated answer scoring are not implemented yet.
 
 ## Project Links
 
@@ -15,8 +15,8 @@ The Vercel link opens the project dashboard, not the public application. Use the
 | Area | Current implementation |
 | --- | --- |
 | Frontend | Next.js App Router starter application in `frontend/`. |
-| Backend | FastAPI service in `backend/`; currently exposes `GET /api/health`. |
-| Scoring | Role-specific rubric and prompt design are documented; scoring is not connected to the application. |
+| Backend | FastAPI service in `backend/`; exposes `GET /api/health` and `POST /api/generate-questions`. |
+| Scoring | Role-specific rubric and prompt design are documented; answer scoring is not connected to the application. |
 
 ## Run Locally
 
@@ -42,17 +42,21 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
+Set `OPENAI_API_KEY` in the backend process environment before starting the server to enable question generation. Keep the key private and out of source control.
+
 The backend health endpoint is [http://localhost:8000/api/health](http://localhost:8000/api/health) and returns:
 
 ```json
 {"status":"ok","service":"backend"}
 ```
 
+`POST /api/generate-questions` accepts a role (`Frontend Developer` or `Data Analyst`) and a level (`Entry-level`, `Mid-level`, or `Senior`), then returns five validated questions. If the model returns invalid JSON twice, the API returns five role- and level-specific fallback questions. The [Postman collection](backend/postman/SpeakUp%20AI%20Questions.postman_collection.json) contains five example requests.
+
 ## Deployment
 
 ### Vercel
 
-The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The Vercel project root is `frontend/`; the public application URL is shown in the project's deployment details. The FastAPI backend is currently available for local development only and is not configured for deployment to Vercel.
+The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The Vercel project root is `frontend/`; the public application URL is shown in the project's deployment details. The FastAPI backend is currently available for local development only and is not configured for deployment to Vercel. The deployed frontend cannot call this local-only API until a reachable backend is configured.
 
 ## Documentation
 

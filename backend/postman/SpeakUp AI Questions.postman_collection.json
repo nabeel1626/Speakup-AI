@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "SpeakUp AI - Question Generation",
+    "description": "Exercises five supported role and level combinations. Start the FastAPI backend and configure OPENAI_API_KEY before running the collection.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:8000"
+    }
+  ],
+  "item": [
+    {
+      "name": "Frontend Developer - Entry-level",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"role\":\"Frontend Developer\",\"level\":\"Entry-level\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{baseUrl}}/api/generate-questions"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('returns five questions', function () {", "  pm.response.to.have.status(200);", "  const body = pm.response.json();", "  pm.expect(body.questions).to.have.lengthOf(5);", "  body.questions.forEach((question) => pm.expect(question).to.be.a('string').and.not.empty);", "  pm.expect(['model', 'fallback']).to.include(body.source);", "});"]}}]
+    },
+    {
+      "name": "Frontend Developer - Mid-level",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"role\":\"Frontend Developer\",\"level\":\"Mid-level\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{baseUrl}}/api/generate-questions"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('returns five questions', function () {", "  pm.response.to.have.status(200);", "  const body = pm.response.json();", "  pm.expect(body.questions).to.have.lengthOf(5);", "  body.questions.forEach((question) => pm.expect(question).to.be.a('string').and.not.empty);", "  pm.expect(['model', 'fallback']).to.include(body.source);", "});"]}}]
+    },
+    {
+      "name": "Frontend Developer - Senior",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"role\":\"Frontend Developer\",\"level\":\"Senior\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{baseUrl}}/api/generate-questions"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('returns five questions', function () {", "  pm.response.to.have.status(200);", "  const body = pm.response.json();", "  pm.expect(body.questions).to.have.lengthOf(5);", "  body.questions.forEach((question) => pm.expect(question).to.be.a('string').and.not.empty);", "  pm.expect(['model', 'fallback']).to.include(body.source);", "});"]}}]
+    },
+    {
+      "name": "Data Analyst - Entry-level",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"role\":\"Data Analyst\",\"level\":\"Entry-level\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{baseUrl}}/api/generate-questions"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('returns five questions', function () {", "  pm.response.to.have.status(200);", "  const body = pm.response.json();", "  pm.expect(body.questions).to.have.lengthOf(5);", "  body.questions.forEach((question) => pm.expect(question).to.be.a('string').and.not.empty);", "  pm.expect(['model', 'fallback']).to.include(body.source);", "});"]}}]
+    },
+    {
+      "name": "Data Analyst - Senior",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\"role\":\"Data Analyst\",\"level\":\"Senior\"}", "options": {"raw": {"language": "json"}}},
+        "url": "{{baseUrl}}/api/generate-questions"
+      },
+      "event": [{"listen": "test", "script": {"type": "text/javascript", "exec": ["pm.test('returns five questions', function () {", "  pm.response.to.have.status(200);", "  const body = pm.response.json();", "  pm.expect(body.questions).to.have.lengthOf(5);", "  body.questions.forEach((question) => pm.expect(question).to.be.a('string').and.not.empty);", "  pm.expect(['model', 'fallback']).to.include(body.source);", "});"]}}]
+    }
+  ]
+}
