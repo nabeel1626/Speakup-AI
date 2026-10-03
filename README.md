@@ -1,12 +1,19 @@
 # SpeakUp AI
 
-SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository contains a Next.js frontend starter, a FastAPI health and question-generation API, and documented scoring-rubric and prompt designs. Voice interview capture and automated answer scoring are not implemented yet.
+SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository contains a Next.js frontend starter, a FastAPI backend with health and question-generation endpoints, and documented scoring-rubric and prompt designs. Voice interview capture and automated answer scoring are not implemented yet.
 
 ## Project Links
 
 - [GitHub repository](https://github.com/nabeel1626/Speakup-AI)
 - [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) for project settings and deployments
 - [Scoring rubric and prompt design](docs/scoring-rubric-and-prompt-design.md)
+
+## Prompt and schema files
+
+Current design sources as of 2026-10-03:
+
+- [Question-generation prompt](backend/prompts/question-generation.prompt.txt) (shared system instructions loaded by the FastAPI backend; role-level guidance is composed in `backend/question_generation.py`)
+- [Role-config JSON schema](backend/config/role-config.schema.json) (accepted role and level request values)
 
 The Vercel link opens the project dashboard, not the public application. Use the URL shown for a successful deployment to share the live frontend.
 
@@ -26,8 +33,8 @@ Install Node.js with npm and Python before starting the services. Run each servi
 
 ```powershell
 cd frontend
-npm install
-npm run dev
+npm.cmd install
+npm.cmd run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).

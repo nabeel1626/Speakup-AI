@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Literal
 
 from google import genai
@@ -9,7 +10,7 @@ Level = Literal["Entry-level", "Mid-level", "Senior"]
 
 
 class GenerateQuestionsRequest(BaseModel):
-    model_config = ConfigDict(str_strip_whitespace=True)
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
     role: Role
     level: Level
@@ -70,6 +71,10 @@ PROMPT_TEMPLATES: dict[tuple[Role, Level], str] = {
         "problems, and influencing decisions across teams."
     ),
 }
+
+QUESTION_GENERATION_PROMPT = (
+    Path(__file__).parent / "prompts" / "question-generation.prompt.txt"
+).read_text(encoding="utf-8").strip()
 
 FALLBACK_QUESTIONS: dict[tuple[Role, Level], list[str]] = {
     ("Frontend Developer", "Entry-level"): [
@@ -138,7 +143,12 @@ async def generate_question_response(
     request: GenerateQuestionsRequest,
     client: genai.Client,
 ) -> GenerateQuestionsResponse:
-    prompt = PROMPT_TEMPLATES[(request.role, request.level)]
+    prompt = "\n\n".join(
+        (
+            QUESTION_GENERATION_PROMPT,
+            f"Role-specific guidance: {PROMPT_TEMPLATES[(request.role, request.level)]}",
+        )
+    )
     user_prompt = (
         f"Generate exactly five distinct interview questions for the role "
         f"{request.role} at the {request.level} level. Do not include answers."

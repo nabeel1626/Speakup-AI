@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/nabeel1626/Speakup-AI/blob/main/backend/config/role-config.schema.json",
+  "title": "SpeakUp AI question-generation role configuration",
+  "description": "Request fields accepted by POST /api/generate-questions.",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["Frontend Developer", "Data Analyst"]
+    },
+    "level": {
+      "type": "string",
+      "enum": ["Entry-level", "Mid-level", "Senior"]
+    }
+  },
+  "required": ["role", "level"],
+  "additionalProperties": false
+}

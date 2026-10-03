@@ -16,7 +16,7 @@ Score every dimension from 1 to 5. Use whole numbers only. A score of 3 means th
 
 ## Role Rubrics
 
-The weights are shared to make scores comparable in shape. The role-specific evidence below defines what relevance and technical depth mean for each role.
+Both roles share the same dimension weights (25/25/20/15/15). The difference between roles is in the evidence guidance and anchors, not the weights.
 
 | Dimension | Weight | Frontend Developer evidence | Data Analyst evidence |
 | --- | ---: | --- | --- |
@@ -27,6 +27,10 @@ The weights are shared to make scores comparable in shape. The role-specific evi
 | Confidence / Filler Words | 15% | Uses direct, appropriately qualified statements and has few distracting fillers, based only on observable delivery evidence. | Same standard: direct but calibrated statements and few distracting fillers, based only on observable delivery evidence. |
 
 Do not use vocal confidence as a proxy for correctness, competence, personality, or likely job performance. If only written text is available, mark Confidence / Filler Words as `N/A` and renormalize the other weights for a provisional score; do not infer confidence from polished prose. The sample runs below include transcript-level delivery observations so all five dimensions can be illustrated.
+
+## Anchors: shared vs dimension-specific
+
+The current design uses the same shared 1–5 anchors across all dimensions and both roles. Role-specific evidence guidance explains what to look for; it does not create separate anchor scales. No personal, dimension-specific anchor changes are recorded in this repository.
 
 ## Calculation
 
@@ -118,6 +122,10 @@ This is a qualitative sensitivity review of the three examples, not a repeated m
 | "Assess confidence and professionalism." | Penalizes quiet, accented, neurodivergent, or non-native delivery styles and can confuse style with skill. | "Assess only observable fillers and directness; do not infer competence or personality." |
 | "Reward detailed answers." | Length bias: verbosity earns points even when irrelevant or unsupported. | "Reward only relevant evidence; do not award points for answer length." |
 | "Give a generous score to encourage the user." | Inflates scores and weakens comparability between sessions. | "Be supportive in feedback, but keep scores anchored to demonstrated evidence." |
+
+## Final strictness approach
+
+The final scoring prompt does not instruct the evaluator to "score harshly" or lower scores as a general policy. It requires independent dimension scores tied to answer evidence, uses the same 1–5 anchors for both roles, and defines 3 as meeting the baseline expectation. A strictness request is treated as drift, not as permission to downscore; missing evidence may lower only the dimension it supports.
 
 ## Build-Log Post
 
