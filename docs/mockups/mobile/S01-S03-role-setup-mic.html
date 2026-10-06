@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><meta content="mobile_tab" name="shell-type"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/><link href="https://fonts.googleapis.com" rel="preconnect"/><link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&amp;family=JetBrains+Mono:wght@500;600&amp;family=Plus+Jakarta+Sans:wght@600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { colors: { "surface": "#0f131c", "inverse-primary": "#494bd6", "tertiary-fixed-dim": "#4edea3", "inverse-surface": "#dfe2ef", "primary-container": "#8083ff", "on-background": "#dfe2ef", "outline": "#908fa0", "on-secondary-fixed": "#001e2c", "inverse-on-surface": "#2c303a", "tertiary-fixed": "#6ffbbe", "tertiary": "#4edea3", "primary-fixed": "#e1e0ff", "on-tertiary": "#003824", "on-secondary-container": "#00374d", "secondary-fixed-dim": "#7bd0ff", "secondary-container": "#00a6e0", "on-primary-fixed": "#07006c", "tertiary-container": "#00885d", "on-tertiary-fixed": "#002113", "surface-tint": "#c0c1ff", "on-secondary-fixed-variant": "#004c69", "on-tertiary-fixed-variant": "#005236", "background": "#0f131c", "surface-container-highest": "#31353f", "on-secondary": "#00354a", "surface-dim": "#0f131c", "surface-container-low": "#181b25", "primary-fixed-dim": "#c0c1ff", "on-surface": "#dfe2ef", "on-error-container": "#ffdad6", "on-primary-fixed-variant": "#2f2ebe", "secondary-fixed": "#c4e7ff", "outline-variant": "#464554", "error-container": "#93000a", "surface-container-high": "#262a34", "primary": "#c0c1ff", "surface-container": "#1c1f29", "on-tertiary-container": "#000703", "error": "#ffb4ab", "surface-container-lowest": "#0a0e17", "surface-variant": "#31353f", "secondary": "#7bd0ff", "on-primary": "#1000a9", "on-primary-container": "#0d0096", "on-surface-variant": "#c7c4d7", "surface-bright": "#353943", "on-error": "#690005" }, borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, spacing: { "space-sm": "0.5rem", "space-xl": "2.5rem", "gutter-mobile": "1rem", "margin": "2rem", "gutter": "1.5rem", "space-xs": "0.25rem", "space-md": "1rem", "space-lg": "1.5rem", "margin-mobile": "1rem" }, fontFamily: { "headline-lg": ["Plus Jakarta Sans"], "body-lg": ["Inter"], "label-md": ["JetBrains Mono"], "headline-lg-mobile": ["Plus Jakarta Sans"], "body-sm": ["Inter"], "label-lg": ["JetBrains Mono"], "display": ["Plus Jakarta Sans"], "display-mobile": ["Plus Jakarta Sans"], "headline-md": ["Plus Jakarta Sans"], "headline-sm": ["Plus Jakarta Sans"], "label-sm": ["JetBrains Mono"], "body-md": ["Inter"], "title-md": ["Inter"] }, fontSize: { "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }], "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.04em", "fontWeight": "500" }], "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "body-sm": ["13px", { "lineHeight": "20px", "fontWeight": "400" }], "label-lg": ["14px", { "lineHeight": "20px", "letterSpacing": "0.02em", "fontWeight": "500" }], "display": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }], "display-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.015em", "fontWeight": "700" }], "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }], "headline-sm": ["20px", { "lineHeight": "28px", "fontWeight": "600" }], "label-sm": ["10px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "600" }], "body-md": ["15px", { "lineHeight": "24px", "fontWeight": "400" }], "title-md": ["16px", { "lineHeight": "24px", "fontWeight": "600" }] } } } };</script><style>@layer base{html,body{width:100vw;margin:0;padding:0;}body{overscroll-behavior:none;}.pb-safe{padding-bottom:env(safe-area-inset-bottom,0px);}.pt-safe{padding-top:env(safe-area-inset-top,0px);}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style></head><body class="bg-surface text-on-surface antialiased flex flex-col min-h-screen"><header class="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl pt-safe"><div class="h-16 px-gutter-mobile flex items-center justify-between"><div class="flex items-center gap-space-sm"><div class="w-9 h-9 rounded-xl bg-surface-container-high flex items-center justify-center text-primary"><span class="material-symbols-outlined text-[20px]">graphic_eq</span></div><div class="flex flex-col"><div class="flex items-center gap-space-xs"><span class="font-headline-sm text-headline-sm text-on-surface tracking-tight">SpeakUp AI</span><span class="px-1.5 py-0.5 rounded-full bg-surface-container-highest text-secondary font-label-sm text-label-sm uppercase tracking-wider">Beta</span></div><div class="flex items-center gap-1.5"><span class="w-1.5 h-1.5 rounded-full bg-tertiary animate-pulse"></span><span class="font-label-sm text-label-sm text-on-surface-variant">24ms</span><span class="text-outline-variant font-label-sm text-label-sm">•</span><span class="font-label-sm text-label-sm text-tertiary uppercase tracking-wider">HUD Ready</span></div></div></div><div class="flex items-center gap-space-xs"><button aria-label="Reset Session" class="w-11 h-11 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant active:text-on-surface hover:text-on-surface active:bg-surface-container" type="button"><span class="material-symbols-outlined text-[20px]">restart_alt</span></button><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div></div></div></header><main class="flex flex-col relative w-full pt-16 bg-surface"><div class="flex flex-col w-full px-gutter-mobile pb-28 pt-2">
+<!-- Subtle Ambient Glow Scrim -->
+<div class="relative w-full mb-space-md">
+<div class="flex items-center gap-space-xs mb-1">
+<span class="w-1.5 h-1.5 rounded-full bg-primary animate-ping"></span>
+<span class="font-label-sm text-label-sm uppercase tracking-widest text-primary font-semibold">Stage 01 • Setup</span>
+</div>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface tracking-tight">AI Technical Mock Interview</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-1">Practice aloud with real-time acoustic voice telemetry and 5-dimension rubric scoring.</p>
+</div>
+<!-- Role Selector Section -->
+<section class="flex flex-col gap-space-sm mb-space-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface tracking-wide uppercase font-semibold">1. Target Role</span>
+<span class="font-label-sm text-label-sm text-tertiary">2 Curated Tracks</span>
+</div>
+<!-- Role Card 1: Frontend (Active) -->
+<div class="relative flex flex-col p-4 rounded-xl bg-surface-container-high transition-all duration-200 cursor-pointer shadow-md shadow-primary-container/10" id="role-frontend" onclick="selectRole('frontend')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-lg bg-primary-container/30 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[24px]">code</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-title-md text-title-md text-on-surface">Frontend Developer</h2>
+<span class="px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-label-sm font-semibold" id="badge-active-frontend">Selected</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">Next.js, React, DOM, Web APIs</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-3 pt-2.5 bg-surface-container/60 -mx-4 -mb-4 px-4 py-2 rounded-b-xl">
+<span class="material-symbols-outlined text-secondary text-[16px]">schedule</span>
+<span class="font-label-sm text-label-sm text-secondary-fixed">5 Questions • ~15 mins</span>
+<span class="text-outline-variant text-label-sm">•</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Live Architecture Drill</span>
+</div>
+</div>
+<!-- Role Card 2: Data Analyst (Inactive) -->
+<div class="relative flex flex-col p-4 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 cursor-pointer" id="role-data" onclick="selectRole('data')">
+<div class="flex items-start justify-between gap-space-sm">
+<div class="flex items-center gap-space-sm">
+<div class="w-11 h-11 rounded-lg bg-surface-container-highest flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined text-[24px]">query_stats</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<h2 class="font-title-md text-title-md text-on-surface">Data Analyst</h2>
+<span class="hidden px-2 py-0.5 rounded-full bg-primary/20 text-primary font-label-sm text-label-sm font-semibold" id="badge-active-data">Selected</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">SQL, ETL Pipelines, BI Metrics</p>
+</div>
+</div>
+<div class="w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center text-outline" id="check-data">
+<span class="material-symbols-outlined text-[16px]">circle</span>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-3 pt-2.5 bg-surface-container-lowest/50 -mx-4 -mb-4 px-4 py-2 rounded-b-xl">
+<span class="material-symbols-outlined text-outline text-[16px]">schedule</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">5 Questions • ~15 mins</span>
+<span class="text-outline-variant text-label-sm">•</span>
+<span class="font-label-sm text-label-sm text-outline">KPI Synthesis Exam</span>
+</div>
+</div>
+</section>
+<!-- Seniority Segmented Control -->
+<section class="flex flex-col gap-space-sm mb-space-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface tracking-wide uppercase font-semibold">2. Seniority Calibration</span>
+<span class="font-label-sm text-label-sm text-primary">Adaptive Prompts</span>
+</div>
+<div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-surface-container-lowest">
+<button class="h-11 flex flex-col items-center justify-center rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" id="lvl-0" onclick="setSeniority(0)" type="button">
+<span class="font-label-md text-label-md font-semibold">Entry</span>
+<span class="font-label-sm text-label-sm opacity-70">0–2 yrs</span>
+</button>
+<button class="h-11 flex flex-col items-center justify-center rounded-lg bg-surface-container-highest text-primary shadow-sm" id="lvl-1" onclick="setSeniority(1)" type="button">
+<span class="font-label-md text-label-md font-semibold">Mid-level</span>
+<span class="font-label-sm text-label-sm text-secondary">2–5 yrs</span>
+</button>
+<button class="h-11 flex flex-col items-center justify-center rounded-lg transition-colors text-on-surface-variant hover:text-on-surface" id="lvl-2" onclick="setSeniority(2)" type="button">
+<span class="font-label-md text-label-md font-semibold">Senior</span>
+<span class="font-label-sm text-label-sm opacity-70">5+ yrs</span>
+</button>
+</div>
+<div class="flex items-start gap-2 px-3 py-2 rounded-lg bg-surface-container-low text-on-surface-variant">
+<span class="material-symbols-outlined text-secondary text-[18px] shrink-0 mt-0.5">tune</span>
+<p class="font-body-sm text-body-sm" id="calibration-note">Calibrating for state modeling, edge resilience, and asynchronous rendering lifecycle paradigms.</p>
+</div>
+</section>
+<!-- Microphone Calibration Card -->
+<section class="flex flex-col gap-space-sm mb-space-md">
+<div class="flex items-center justify-between">
+<span class="font-label-md text-label-md text-on-surface tracking-wide uppercase font-semibold">3. Acoustic Calibration</span>
+<span class="font-label-sm text-label-sm text-tertiary font-mono">48kHz PCM</span>
+</div>
+<div class="rounded-xl bg-surface-container p-4 flex flex-col gap-3 shadow-md">
+<!-- Status Badge & Device Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="w-8 h-8 rounded-lg bg-tertiary-container/30 flex items-center justify-center text-tertiary">
+<span class="material-symbols-outlined text-[18px]">mic</span>
+</span>
+<div class="flex flex-col">
+<span class="font-label-md text-label-md text-on-surface font-semibold truncate max-w-[170px]">MacBook Pro Built-in</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Default CoreAudio In</span>
+</div>
+</div>
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-tertiary-container/40 text-tertiary">
+<span class="w-2 h-2 rounded-full bg-tertiary animate-pulse"></span>
+<span class="font-label-sm text-label-sm font-semibold tracking-wider uppercase">Optimal</span>
+</div>
+</div>
+<!-- Reactive Audio Peak Visualizer -->
+<div class="flex flex-col gap-1.5 bg-surface-container-lowest p-3 rounded-lg">
+<div class="flex items-center justify-between">
+<span class="font-label-sm text-label-sm text-outline uppercase font-mono">Telemetry Peak</span>
+<span class="font-label-md text-label-md font-mono text-tertiary font-semibold" id="db-value">-28.4 dB</span>
+</div>
+<!-- Dynamic EQ Bars -->
+<div class="flex items-end justify-between h-11 gap-1 px-1 pt-2">
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 25%;"></div>
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 48%;"></div>
+<div class="eq-bar w-full bg-secondary-container rounded-t-sm transition-all duration-75" style="height: 70%;"></div>
+<div class="eq-bar w-full bg-secondary rounded-t-sm transition-all duration-75" style="height: 85%;"></div>
+<div class="eq-bar w-full bg-tertiary rounded-t-sm transition-all duration-75" style="height: 62%;"></div>
+<div class="eq-bar w-full bg-secondary rounded-t-sm transition-all duration-75" style="height: 90%;"></div>
+<div class="eq-bar w-full bg-secondary-container rounded-t-sm transition-all duration-75" style="height: 65%;"></div>
+<div class="eq-bar w-full bg-tertiary rounded-t-sm transition-all duration-75" style="height: 42%;"></div>
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 55%;"></div>
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 30%;"></div>
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 18%;"></div>
+<div class="eq-bar w-full bg-surface-container-highest rounded-t-sm transition-all duration-75" style="height: 38%;"></div>
+</div>
+<div class="flex justify-between items-center text-outline-variant font-label-sm text-label-sm pt-1">
+<span>-60 dB</span>
+<span>-30 dB</span>
+<span>-12 dB</span>
+<span>0 dB</span>
+</div>
+</div>
+<!-- Test Prompt Instruction -->
+<div class="flex items-center gap-2 p-2.5 rounded-lg bg-surface-container-high text-on-surface">
+<span class="material-symbols-outlined text-primary text-[20px]">record_voice_over</span>
+<div class="flex flex-col min-w-0">
+<span class="font-label-sm text-label-sm text-on-surface-variant uppercase font-semibold">Test Voice Trigger</span>
+<p class="font-body-sm text-body-sm text-on-surface italic truncate">"I usually structure modular state with hooks..."</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Sticky Mobile Action Bar -->
+<div class="fixed bottom-16 left-0 right-0 p-3 bg-surface/90 backdrop-blur-lg z-40">
+<div class="max-w-md mx-auto flex flex-col gap-2">
+<button class="w-full h-12 flex items-center justify-center gap-2 rounded-xl bg-primary text-on-primary font-headline-sm text-title-md font-semibold tracking-wide active:scale-[0.98] transition-transform shadow-lg shadow-primary/20" onclick="startSimulation()" type="button">
+<span>Start Interview Simulation (5 Qs)</span>
+<span class="material-symbols-outlined text-[20px]">arrow_forward</span>
+</button>
+<div class="flex items-center justify-center gap-1.5 text-center">
+<span class="material-symbols-outlined text-[14px] text-outline">verified_user</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Zero-auth guest session • Illustrative dry-run scoring</span>
+</div>
+</div>
+</div>
+</div>
+<script>
+  let currentRole = 'frontend';
+  let currentLevel = 1;
+
+  function selectRole(role) {
+    currentRole = role;
+    const feCard = document.getElementById('role-frontend');
+    const daCard = document.getElementById('role-data');
+    const feBadge = document.getElementById('badge-active-frontend');
+    const daBadge = document.getElementById('badge-active-data');
+    const daCheck = document.getElementById('check-data');
+
+    if (role === 'frontend') {
+      feCard.className = 'relative flex flex-col p-4 rounded-xl bg-surface-container-high transition-all duration-200 cursor-pointer shadow-md shadow-primary-container/10';
+      daCard.className = 'relative flex flex-col p-4 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 cursor-pointer';
+      feBadge.classList.remove('hidden');
+      daBadge.classList.add('hidden');
+      daCheck.innerHTML = '<span class="material-symbols-outlined text-[16px]">circle</span>';
+      daCheck.className = 'w-6 h-6 rounded-full bg-surface-container-highest flex items-center justify-center text-outline';
+    } else {
+      daCard.className = 'relative flex flex-col p-4 rounded-xl bg-surface-container-high transition-all duration-200 cursor-pointer shadow-md shadow-primary-container/10';
+      feCard.className = 'relative flex flex-col p-4 rounded-xl bg-surface-container-low hover:bg-surface-container transition-all duration-200 cursor-pointer';
+      daBadge.classList.remove('hidden');
+      feBadge.classList.add('hidden');
+      daCheck.innerHTML = '<span class="material-symbols-outlined text-[16px]">check</span>';
+      daCheck.className = 'w-6 h-6 rounded-full bg-primary flex items-center justify-center text-on-primary';
+    }
+    updateCalibrationNote();
+  }
+
+  function setSeniority(lvl) {
+    currentLevel = lvl;
+    for (let i = 0; i <= 2; i++) {
+      const el = document.getElementById(`lvl-${i}`);
+      if (i === lvl) {
+        el.className = 'h-11 flex flex-col items-center justify-center rounded-lg bg-surface-container-highest text-primary shadow-sm';
+      } else {
+        el.className = 'h-11 flex flex-col items-center justify-center rounded-lg transition-colors text-on-surface-variant hover:text-on-surface';
+      }
+    }
+    updateCalibrationNote();
+  }
+
+  function updateCalibrationNote() {
+    const noteEl = document.getElementById('calibration-note');
+    const notes = {
+      frontend: [
+        'Calibrating foundational DOM concepts, syntax clarity, and simple algorithmic problem-solving.',
+        'Calibrating for state modeling, edge resilience, and asynchronous rendering lifecycle paradigms.',
+        'Calibrating for micro-frontends, distributed asset hydration, WebGL/Worker threading, and latency SLOs.'
+      ],
+      data: [
+        'Focusing on baseline SQL queries, aggregations, data cleanliness, and standard chart interpretation.',
+        'Focusing on dimensional modeling, cohort analysis, metric reconciliation, and ETL failure recovery.',
+        'Focusing on petabyte warehouse partitioning, streaming transformations, cost optimization, and VP-level narratives.'
+      ]
+    };
+    noteEl.textContent = notes[currentRole][currentLevel];
+  }
+
+  // Audio bar micro-animation simulation
+  setInterval(() => {
+    const bars = document.querySelectorAll('.eq-bar');
+    const dbValue = document.getElementById('db-value');
+    if (!bars.length) return;
+
+    const baseNoise = -29;
+    const jitter = (Math.random() * 8 - 4).toFixed(1);
+    const simulatedDb = (baseNoise + parseFloat(jitter)).toFixed(1);
+    if (dbValue) dbValue.textContent = `${simulatedDb} dB`;
+
+    bars.forEach((bar, idx) => {
+      const randomHeight = Math.floor(Math.random() * 75) + 15;
+      bar.style.height = `${randomHeight}%`;
+    });
+  }, 180);
+
+  function startSimulation() {
+    const btn = document.querySelector('button[onclick="startSimulation()"]');
+    if (btn) {
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin text-[20px]">progress_activity</span><span>Initializing Audio Engine...</span>';
+      setTimeout(() => {
+        window.location.hash = '#stage-interview';
+      }, 600);
+    }
+  }
+</script></main><nav class="fixed bottom-0 w-full z-50 pb-safe bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)]" data-active-classes="text-primary bg-surface-container-high"><div class="flex items-center justify-between h-16 px-gutter-mobile"><a aria-current="page" class="flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-xl transition-colors text-primary bg-surface-container-high" data-path="stage-setup" href="#"><span class="font-label-sm text-label-sm font-semibold tracking-wider text-outline">01</span><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">tune</span><span class="font-label-sm text-label-sm">Setup</span></div></a><a class="flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="stage-interview" href="#"><span class="font-label-sm text-label-sm font-semibold tracking-wider text-outline">02</span><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">mic</span><span class="font-label-sm text-label-sm">Interview</span></div></a><a class="flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="stage-feedback" href="#"><span class="font-label-sm text-label-sm font-semibold tracking-wider text-outline">03</span><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">analytics</span><span class="font-label-sm text-label-sm">Feedback</span></div></a><a class="flex flex-col items-center justify-center gap-1 flex-1 h-12 rounded-xl text-on-surface-variant hover:text-on-surface transition-colors" data-path="stage-report" href="#"><span class="font-label-sm text-label-sm font-semibold tracking-wider text-outline">04</span><div class="flex items-center gap-1"><span class="material-symbols-outlined text-[18px]">description</span><span class="font-label-sm text-label-sm">Report</span></div></a></div></nav></body></html>

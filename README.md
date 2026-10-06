@@ -49,7 +49,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload --env-file .env
 ```
 
-Set `GEMINI_API_KEY` in `backend/.env` before starting the server to enable question generation. Create the key in [Google AI Studio](https://aistudio.google.com/apikey), keep it private, and never commit it.
+Create a local `backend/.env` file and set `GEMINI_API_KEY` in it before starting the server to enable question generation. The `.env` file is ignored by Git. Create the key in [Google AI Studio](https://aistudio.google.com/apikey), keep it private, and never commit it.
 
 The backend health endpoint is [http://localhost:8000/api/health](http://localhost:8000/api/health) and returns:
 
