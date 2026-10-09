@@ -154,23 +154,36 @@ async def generate_question_response(
         f"{request.role} at the {request.level} level. Do not include answers."
     )
 
+    last_error: Exception | None = None
+
     for attempt in range(2):
         system_prompt = prompt
         if attempt:
             system_prompt = f"{prompt}\n\n{STRICT_JSON_REMINDER}"
 
-        response = await client.aio.models.generate_content(
-            model="gemini-3.8-flash",
-            contents=user_prompt,
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                response_mime_type="application/json",
-                response_schema=GEMINI_RESPONSE_SCHEMA,
-            ),
-        )
+        try:
+            response = await client.aio.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=user_prompt,
+                config=types.GenerateContentConfig(
+                    system_instruction=system_prompt,
+                    response_mime_type="application/json",
+                    response_schema=GEMINI_RESPONSE_SCHEMA,
+                ),
+            )
+        except Exception as exc:
+            last_error = exc
+            print("=" * 60)
+            print(f"GEMINI API ERROR (attempt {attempt + 1}): {type(exc).__name__}")
+            print(repr(exc))
+            print("=" * 60)
+            continue
+
         try:
             generated = GeneratedQuestionSet.model_validate_json(response.text or "")
-        except ValueError:
+        except ValueError as exc:
+            last_error = exc
+            print(f"SCHEMA PARSE ERROR (attempt {attempt + 1}): {exc}")
             continue
 
         return GenerateQuestionsResponse(
@@ -179,6 +192,8 @@ async def generate_question_response(
             questions=generated.questions,
             source="model",
         )
+
+    print(f"Falling back after errors. Last error: {last_error!r}")
 
     return GenerateQuestionsResponse(
         role=request.role,
