@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import errors
@@ -10,6 +10,8 @@ from question_generation import (
     GenerateQuestionsResponse,
     generate_question_response,
 )
+import tempfile
+from transcription import transcribe_audio_file
 
 app = FastAPI(title="SpeakUp AI API", version="0.1.0")
 
@@ -49,3 +51,30 @@ async def generate_questions(
         ) from exc
     finally:
         await client.aio.aclose()
+
+@app.post("/api/transcribe")
+async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
+    suffix = ".webm"
+    if audio.filename and "." in audio.filename:
+        suffix = "." + audio.filename.rsplit(".", 1)[-1]
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
+        contents = await audio.read()
+        tmp.write(contents)
+        tmp_path = tmp.name
+
+    try:
+        transcript = transcribe_audio_file(tmp_path)
+        return {"transcript": transcript}
+    except Exception as exc:
+        print(f"LOCAL WHISPER ERROR: {type(exc).__name__}: {exc!r}")
+        raise HTTPException(
+            status_code=502,
+            detail="Transcription provider could not complete the request.",
+        )
+    finally:
+        try:
+            import os
+            os.remove(tmp_path)
+        except OSError:
+            pass

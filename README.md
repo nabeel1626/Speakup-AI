@@ -63,7 +63,9 @@ The backend health endpoint is [http://localhost:8000/api/health](http://localho
 
 ### Vercel
 
-The [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) manages the frontend deployment. The Vercel project root is `frontend/`; the public application URL is shown in the project's deployment details. The FastAPI backend is currently available for local development only and is not configured for deployment to Vercel. The deployed frontend cannot call this local-only API until a reachable backend is configured.
+The Vercel project dashboard manages the frontend deployment. As of
+[date], the production URL has not been verified in incognito. This is
+an open blocker.
 
 ## Documentation
 
