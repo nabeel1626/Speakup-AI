@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -6,11 +7,11 @@ from google import genai
 from google.genai import errors
 
 from question_generation import (
+    FALLBACK_QUESTIONS,
     GenerateQuestionsRequest,
     GenerateQuestionsResponse,
     generate_question_response,
 )
-import tempfile
 from transcription import transcribe_audio_file
 
 app = FastAPI(title="SpeakUp AI API", version="0.1.0")
@@ -35,22 +36,30 @@ async def generate_questions(
     request: GenerateQuestionsRequest,
 ) -> GenerateQuestionsResponse:
     api_key = os.getenv("GEMINI_API_KEY")
+
+    # No key configured → return fallback questions instead of 503.
     if not api_key:
-        raise HTTPException(
-            status_code=503,
-            detail="Question generation is unavailable until GEMINI_API_KEY is configured.",
+        return GenerateQuestionsResponse(
+            role=request.role,
+            level=request.level,
+            questions=FALLBACK_QUESTIONS[(request.role, request.level)],
+            source="fallback",
         )
 
     client = genai.Client(api_key=api_key)
     try:
         return await generate_question_response(request, client)
-    except errors.APIError as exc:
-        raise HTTPException(
-            status_code=502,
-            detail="The question generation provider could not complete the request.",
-        ) from exc
+    except errors.APIError:
+        # Gemini failed → return fallback rather than 502.
+        return GenerateQuestionsResponse(
+            role=request.role,
+            level=request.level,
+            questions=FALLBACK_QUESTIONS[(request.role, request.level)],
+            source="fallback",
+        )
     finally:
         await client.aio.aclose()
+
 
 @app.post("/api/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
@@ -74,7 +83,6 @@ async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
         )
     finally:
         try:
-            import os
             os.remove(tmp_path)
         except OSError:
             pass
