@@ -5,6 +5,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import errors
+from pydantic import BaseModel
 
 from question_generation import (
     FALLBACK_QUESTIONS,
@@ -13,6 +14,7 @@ from question_generation import (
     generate_question_response,
 )
 from transcription import transcribe_audio_file
+from scoring import score_answer
 
 app = FastAPI(title="SpeakUp AI API", version="0.1.0")
 
@@ -86,3 +88,27 @@ async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
             os.remove(tmp_path)
         except OSError:
             pass
+
+
+class ScoreAnswerRequest(BaseModel):
+    question: str
+    answer: str
+    role: str
+    level: str
+
+
+@app.post("/api/score-answer")
+def score_answer_endpoint(request: ScoreAnswerRequest) -> dict:
+    try:
+        return score_answer(
+            question=request.question,
+            answer=request.answer,
+            role=request.role,
+            level=request.level,
+        )
+    except Exception as exc:
+        print(f"SCORING ERROR: {type(exc).__name__}: {exc!r}")
+        raise HTTPException(
+            status_code=502,
+            detail="Scoring failed.",
+        )
