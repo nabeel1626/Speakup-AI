@@ -1,6 +1,5 @@
 "use client";
 
-import { upload } from "@vercel/blob/client";
 import { useEffect, useRef, useState } from "react";
 
 type QuestionResponse = {
@@ -143,22 +142,21 @@ export default function Interview() {
           setError(`Recording too small (${blob.size} bytes). Speak louder or pick another mic.`);
           return;
         }
+
         setTranscribing(true);
         try {
-          const uploaded = await upload(`answers/${Date.now()}.webm`, blob, {
-  access: "public",
-  handleUploadUrl: "/api/upload",
-});
-
+          // 1. Send audio to Next.js API route → Groq Whisper
+          const form = new FormData();
+          form.append("audio", blob, "answer.webm");
           const tRes = await fetch("/api/transcribe", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ blob_url: uploaded.url }),
+            body: form,
           });
           if (!tRes.ok) throw new Error(`Transcribe returned ${tRes.status}`);
           const tData = await tRes.json();
           setTranscript(tData.transcript || "(empty)");
 
+          // 2. Send transcript to Next.js API route → Groq LLM
           setTranscribing(false);
           setScoring(true);
           const sRes = await fetch("/api/score-answer", {
