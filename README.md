@@ -1,74 +1,72 @@
 # SpeakUp AI
 
-SpeakUp AI is a mock-interview practice project focused on role-specific interview preparation. The repository contains a Next.js frontend starter, a FastAPI backend with health and question-generation endpoints, and documented scoring-rubric and prompt designs. Voice interview capture and automated answer scoring are not implemented yet.
+SpeakUp AI is an AI-powered voice mock interviewer. The user selects a role
+and experience level, the AI asks five questions by voice, records the
+spoken answers, transcribes them, and scores each answer against a
+five-dimension rubric with instant feedback.
+
+## Live Application
+
+- **Deployed app:** [https://speakup-ai-oomc.vercel.app/interview](https://speakup-ai-oomc.vercel.app/interview)
+
+The deployed version runs entirely on Vercel. It uses Next.js API routes
+to call Groq for speech-to-text (Whisper) and answer scoring (GPT-OSS).
+
+## What's Implemented
+
+| Area | Status |
+| --- | --- |
+| Interview flow (setup → 5 questions → summary) | ✅ Working |
+| Browser text-to-speech for reading questions | ✅ Working |
+| Microphone recording | ✅ Working |
+| Speech-to-text (deployed: Groq Whisper) | ✅ Working |
+| Speech-to-text (local: HuggingFace Whisper) | ✅ Working |
+| Answer scoring (deployed: Groq GPT-OSS) | ✅ Working |
+| Answer scoring (local: Phi-3-mini) | ✅ Working |
+| Role and level selection (2 roles × 3 levels) | ✅ Working |
+| Per-question score card (5 dimensions + strengths + improvements) | ✅ Working |
+| Final summary with per-dimension averages | ✅ Working |
+| Session persistence / history | ❌ Not in scope |
+| User accounts | ❌ Not in scope |
+
+## Architecture
+
+The project has **two AI backends**:
+
+1. **Deployed (Vercel + Groq)** — no Python server required.
+   - Frontend calls `/api/generate-questions`, `/api/transcribe`, and
+     `/api/score-answer` in Next.js.
+   - Next.js API routes call Groq's API.
+   - Fast, free tier, no local models to download.
+
+2. **Local (FastAPI + HuggingFace)** — for offline development.
+   - FastAPI backend in `backend/` runs local Whisper and Phi-3.
+   - Toggle with the `AI_MODE` environment variable:
+     - `AI_MODE=local` → uses local models
+     - `AI_MODE=cloud` → uses Groq
+
+The deployed version does not use the Python backend. It exists as a
+reference implementation and for offline demos.
 
 ## Project Links
 
 - [GitHub repository](https://github.com/nabeel1626/Speakup-AI)
-- [Vercel project dashboard](https://vercel.com/sspeakup-ai/speakup-ai) for project settings and deployments
+- [Design document](docs/DESIGN.md) — MVP scope, screens, journeys
+- [Mockups](docs/MOCKUPS.md) — design evidence from Stitch AI
+- [Design system](docs/DESIGN_SYSTEM.md) — colors, typography, spacing
 - [Scoring rubric and prompt design](docs/scoring-rubric-and-prompt-design.md)
-
-## Prompt and schema files
-
-Current design sources as of 2026-10-03:
-
-- [Question-generation prompt](backend/prompts/question-generation.prompt.txt) (shared system instructions loaded by the FastAPI backend; role-level guidance is composed in `backend/question_generation.py`)
-- [Role-config JSON schema](backend/config/role-config.schema.json) (accepted role and level request values)
-
-The Vercel link opens the project dashboard, not the public application. Use the URL shown for a successful deployment to share the live frontend.
-
-## Current Status
-
-| Area | Current implementation |
-| --- | --- |
-| Frontend | Next.js App Router starter application in `frontend/`. |
-| Backend | FastAPI service in `backend/`; exposes `GET /api/health` and `POST /api/generate-questions`. |
-| Scoring | Role-specific rubric and prompt design are documented; answer scoring is not connected to the application. |
+- [Corrections log](docs/CORRECTIONS.md) — transparency on early reporting
+- [AI usage disclosure](AI_USAGE.md)
 
 ## Run Locally
 
-Install Node.js with npm and Python before starting the services. Run each service in a separate PowerShell terminal.
+You need:
+- Node.js 18+ with npm
+- Python 3.11+ (only if running the local backend)
 
-### Frontend
+### Frontend (required)
 
 ```powershell
 cd frontend
 npm.cmd install
 npm.cmd run dev
-```
-
-Open [http://localhost:3000](http://localhost:3000).
-
-### Backend
-
-```powershell
-cd backend
-py -m venv .venv
-.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-uvicorn main:app --reload --env-file .env
-```
-
-Create a local `backend/.env` file and set `GEMINI_API_KEY` in it before starting the server to enable question generation. The `.env` file is ignored by Git. Create the key in [Google AI Studio](https://aistudio.google.com/apikey), keep it private, and never commit it.
-
-The backend health endpoint is [http://localhost:8000/api/health](http://localhost:8000/api/health) and returns:
-
-```json
-{"status":"ok","service":"backend"}
-```
-
-`POST /api/generate-questions` accepts a role (`Frontend Developer` or `Data Analyst`) and a level (`Entry-level`, `Mid-level`, or `Senior`), then returns five validated questions. If the model returns invalid JSON twice, the API returns five role- and level-specific fallback questions. The [Postman collection](backend/postman/SpeakUp%20AI%20Questions.postman_collection.json) contains five example requests.
-
-## Deployment
-
-### Vercel
-
-The Vercel project dashboard manages the frontend deployment. As of
-[date], the production URL has not been verified in incognito. This is
-an open blocker.
-
-## Documentation
-
-- [Next.js documentation](https://nextjs.org/docs)
-- [FastAPI documentation](https://fastapi.tiangolo.com/)
-- [Vercel deployment documentation](https://vercel.com/docs/deployments)
