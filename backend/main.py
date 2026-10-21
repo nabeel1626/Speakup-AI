@@ -1,7 +1,9 @@
+import asyncio
 import os
 import tempfile
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+import httpx
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from google import genai
 from google.genai import errors
@@ -14,7 +16,10 @@ from question_generation import (
     generate_question_response,
 )
 from transcription import transcribe_audio_file
+from transcription_cloud import transcribe_via_groq
 from scoring import score_answer
+from scoring_cloud import score_via_groq
+from ai_mode import use_local
 
 app = FastAPI(title="SpeakUp AI API", version="0.1.0")
 
@@ -28,10 +33,15 @@ app.add_middleware(
 )
 
 
+# ---------------------------------------------------------------- Health
+
 @app.get("/api/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "backend"}
+    mode = "local" if use_local() else "cloud"
+    return {"status": "ok", "service": "backend", "ai_mode": mode}
 
+
+# ---------------------------------------------------------------- Questions
 
 @app.post("/api/generate-questions", response_model=GenerateQuestionsResponse)
 async def generate_questions(
@@ -39,7 +49,6 @@ async def generate_questions(
 ) -> GenerateQuestionsResponse:
     api_key = os.getenv("GEMINI_API_KEY")
 
-    # No key configured → return fallback questions instead of 503.
     if not api_key:
         return GenerateQuestionsResponse(
             role=request.role,
@@ -52,7 +61,6 @@ async def generate_questions(
     try:
         return await generate_question_response(request, client)
     except errors.APIError:
-        # Gemini failed → return fallback rather than 502.
         return GenerateQuestionsResponse(
             role=request.role,
             level=request.level,
@@ -63,22 +71,47 @@ async def generate_questions(
         await client.aio.aclose()
 
 
+# ---------------------------------------------------------------- Transcribe
+
+class TranscribeRequest(BaseModel):
+    blob_url: str
+
+
 @app.post("/api/transcribe")
-async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
+async def transcribe_audio(request: TranscribeRequest) -> dict[str, str]:
+    try:
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.get(request.blob_url)
+            response.raise_for_status()
+            audio_bytes = response.content
+    except Exception as exc:
+        print(f"BLOB FETCH ERROR: {type(exc).__name__}: {exc!r}")
+        raise HTTPException(
+            status_code=502,
+            detail="Could not fetch audio from blob URL.",
+        )
+
     suffix = ".webm"
-    if audio.filename and "." in audio.filename:
-        suffix = "." + audio.filename.rsplit(".", 1)[-1]
+    lower_url = request.blob_url.lower()
+    if lower_url.endswith(".m4a"):
+        suffix = ".m4a"
+    elif lower_url.endswith(".mp3"):
+        suffix = ".mp3"
+    elif lower_url.endswith(".wav"):
+        suffix = ".wav"
 
     with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as tmp:
-        contents = await audio.read()
-        tmp.write(contents)
+        tmp.write(audio_bytes)
         tmp_path = tmp.name
 
     try:
-        transcript = transcribe_audio_file(tmp_path)
+        if use_local():
+            transcript = await asyncio.to_thread(transcribe_audio_file, tmp_path)
+        else:
+            transcript = await transcribe_via_groq(tmp_path, content_type="audio/webm")
         return {"transcript": transcript}
     except Exception as exc:
-        print(f"LOCAL WHISPER ERROR: {type(exc).__name__}: {exc!r}")
+        print(f"TRANSCRIBE ERROR: {type(exc).__name__}: {exc!r}")
         raise HTTPException(
             status_code=502,
             detail="Transcription provider could not complete the request.",
@@ -90,6 +123,8 @@ async def transcribe_audio(audio: UploadFile = File(...)) -> dict[str, str]:
             pass
 
 
+# ---------------------------------------------------------------- Scoring
+
 class ScoreAnswerRequest(BaseModel):
     question: str
     answer: str
@@ -98,14 +133,23 @@ class ScoreAnswerRequest(BaseModel):
 
 
 @app.post("/api/score-answer")
-def score_answer_endpoint(request: ScoreAnswerRequest) -> dict:
+async def score_answer_endpoint(request: ScoreAnswerRequest) -> dict:
     try:
-        return score_answer(
-            question=request.question,
-            answer=request.answer,
-            role=request.role,
-            level=request.level,
-        )
+        if use_local():
+            return await asyncio.to_thread(
+                score_answer,
+                request.question,
+                request.answer,
+                request.role,
+                request.level,
+            )
+        else:
+            return await score_via_groq(
+                question=request.question,
+                answer=request.answer,
+                role=request.role,
+                level=request.level,
+            )
     except Exception as exc:
         print(f"SCORING ERROR: {type(exc).__name__}: {exc!r}")
         raise HTTPException(

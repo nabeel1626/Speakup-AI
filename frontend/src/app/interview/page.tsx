@@ -1,5 +1,6 @@
 "use client";
 
+import { upload } from "@vercel/blob/client";
 import { useEffect, useRef, useState } from "react";
 
 type QuestionResponse = {
@@ -9,12 +10,31 @@ type QuestionResponse = {
   source: string;
 };
 
+type ScoreResult = {
+  relevance: number;
+  technical_depth: number;
+  structure: number;
+  clarity: number;
+  confidence: number;
+  strengths: string[];
+  improvements: string[];
+};
+
 type AnswerRecord = {
   question: string;
   transcript: string;
+  score?: ScoreResult;
 };
 
 type Stage = "setup" | "interview" | "summary";
+
+const DIMENSIONS: { key: keyof ScoreResult; label: string }[] = [
+  { key: "relevance", label: "Relevance" },
+  { key: "technical_depth", label: "Technical Depth" },
+  { key: "structure", label: "Structure" },
+  { key: "clarity", label: "Clarity" },
+  { key: "confidence", label: "Confidence" },
+];
 
 export default function Interview() {
   const [stage, setStage] = useState<Stage>("setup");
@@ -24,8 +44,10 @@ export default function Interview() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
   const [transcript, setTranscript] = useState("");
+  const [score, setScore] = useState<ScoreResult | null>(null);
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
+  const [scoring, setScoring] = useState(false);
   const [speaking, setSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -47,7 +69,7 @@ export default function Interview() {
         setDevices(mics);
         if (mics.length && !selectedDeviceId) setSelectedDeviceId(mics[0].deviceId);
       } catch {
-        // ignore — user will see permission error when recording
+        // ignore
       }
     }
     loadDevices();
@@ -57,7 +79,7 @@ export default function Interview() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8000/api/generate-questions", {
+      const res = await fetch("/api/generate-questions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ role, level }),
@@ -68,6 +90,7 @@ export default function Interview() {
       setCurrentIndex(0);
       setAnswers([]);
       setTranscript("");
+      setScore(null);
       setStage("interview");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start");
@@ -96,6 +119,7 @@ export default function Interview() {
   async function startRecording() {
     setError("");
     setTranscript("");
+    setScore(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
@@ -121,19 +145,40 @@ export default function Interview() {
         }
         setTranscribing(true);
         try {
-          const form = new FormData();
-          form.append("audio", blob, "answer.webm");
-          const res = await fetch("http://localhost:8000/api/transcribe", {
+          const uploaded = await upload(`answers/${Date.now()}.webm`, blob, {
+  access: "public",
+  handleUploadUrl: "/api/upload",
+});
+
+          const tRes = await fetch("/api/transcribe", {
             method: "POST",
-            body: form,
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ blob_url: uploaded.url }),
           });
-          if (!res.ok) throw new Error(`Transcribe returned ${res.status}`);
-          const data = await res.json();
-          setTranscript(data.transcript || "(empty)");
+          if (!tRes.ok) throw new Error(`Transcribe returned ${tRes.status}`);
+          const tData = await tRes.json();
+          setTranscript(tData.transcript || "(empty)");
+
+          setTranscribing(false);
+          setScoring(true);
+          const sRes = await fetch("/api/score-answer", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              question: questions[currentIndex],
+              answer: tData.transcript,
+              role,
+              level,
+            }),
+          });
+          if (!sRes.ok) throw new Error(`Scoring returned ${sRes.status}`);
+          const sData: ScoreResult = await sRes.json();
+          setScore(sData);
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Transcription failed");
+          setError(err instanceof Error ? err.message : "Transcription or scoring failed");
         } finally {
           setTranscribing(false);
+          setScoring(false);
         }
       };
 
@@ -152,10 +197,15 @@ export default function Interview() {
   function saveAnswerAndNext() {
     const updated = [
       ...answers,
-      { question: questions[currentIndex], transcript: transcript || "(no answer)" },
+      {
+        question: questions[currentIndex],
+        transcript: transcript || "(no answer)",
+        score: score ?? undefined,
+      },
     ];
     setAnswers(updated);
     setTranscript("");
+    setScore(null);
 
     if (currentIndex + 1 >= questions.length) {
       setStage("summary");
@@ -164,21 +214,20 @@ export default function Interview() {
     }
   }
 
-  // --- Screens ---
-
+  // ---------- Setup screen ----------
   if (stage === "setup") {
     return (
-      <main className="min-h-screen bg-surface text-on-surface p-8">
+      <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up">
         <h1 className="font-display text-3xl font-bold text-primary mb-6">
           Start a Mock Interview
         </h1>
-        <div className="space-y-4 max-w-xl">
+        <div className="surface-elevated p-6 max-w-xl space-y-4">
           <label className="block">
             <span className="font-mono text-xs text-on-surface-variant block mb-1">Role</span>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="bg-surface-container border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
+              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
             >
               <option>Frontend Developer</option>
               <option>Data Analyst</option>
@@ -190,7 +239,7 @@ export default function Interview() {
             <select
               value={level}
               onChange={(e) => setLevel(e.target.value)}
-              className="bg-surface-container border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
+              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
             >
               <option>Entry-level</option>
               <option>Mid-level</option>
@@ -203,7 +252,7 @@ export default function Interview() {
             <select
               value={selectedDeviceId}
               onChange={(e) => setSelectedDeviceId(e.target.value)}
-              className="bg-surface-container border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
+              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
             >
               {devices.map((d) => (
                 <option key={d.deviceId} value={d.deviceId}>
@@ -218,7 +267,7 @@ export default function Interview() {
           <button
             onClick={startInterview}
             disabled={loading}
-            className="bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded disabled:opacity-50"
+            className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded disabled:opacity-50"
           >
             {loading ? "Loading..." : "Start Interview"}
           </button>
@@ -227,9 +276,10 @@ export default function Interview() {
     );
   }
 
+  // ---------- Interview screen ----------
   if (stage === "interview") {
     return (
-      <main className="min-h-screen bg-surface text-on-surface p-8">
+      <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="flex justify-between items-center">
             <h1 className="font-display text-2xl font-bold text-primary">
@@ -240,7 +290,6 @@ export default function Interview() {
             </span>
           </div>
 
-          {/* Progress bar */}
           <div className="w-full h-1 bg-surface-container-highest rounded overflow-hidden">
             <div
               className="h-full bg-primary transition-all"
@@ -248,22 +297,21 @@ export default function Interview() {
             />
           </div>
 
-          {/* Question card */}
-          <div className="bg-surface-container border border-outline-variant rounded-lg p-6">
+          <div className="surface-elevated p-6">
             <p className="font-mono text-xs text-on-surface-variant mb-2">Question</p>
             <p className="font-body text-xl leading-relaxed">{questions[currentIndex]}</p>
             <div className="mt-6 flex gap-3">
               {!speaking ? (
                 <button
                   onClick={speakCurrentQuestion}
-                  className="bg-secondary text-[#00354a] font-semibold px-5 py-2 rounded"
+                  className="btn-secondary bg-secondary text-[#00354a] font-semibold px-5 py-2 rounded"
                 >
                   ▶ Read Aloud
                 </button>
               ) : (
                 <button
                   onClick={stopSpeaking}
-                  className="bg-error text-[#690005] font-semibold px-5 py-2 rounded"
+                  className="btn-danger bg-error text-[#690005] font-semibold px-5 py-2 rounded"
                 >
                   ■ Stop
                 </button>
@@ -271,20 +319,19 @@ export default function Interview() {
             </div>
           </div>
 
-          {/* Record controls */}
           <div className="flex gap-3">
             {!recording ? (
               <button
                 onClick={startRecording}
-                disabled={transcribing}
-                className="bg-error text-[#690005] font-semibold px-6 py-3 rounded disabled:opacity-50"
+                disabled={transcribing || scoring}
+                className="btn-danger bg-error text-[#690005] font-semibold px-6 py-3 rounded disabled:opacity-50"
               >
                 ● Record Answer
               </button>
             ) : (
               <button
                 onClick={stopRecording}
-                className="bg-secondary text-[#00354a] font-semibold px-6 py-3 rounded"
+                className="btn-secondary bg-secondary text-[#00354a] font-semibold px-6 py-3 rounded"
               >
                 ■ Stop
               </button>
@@ -294,20 +341,64 @@ export default function Interview() {
           {error && <p className="text-error font-mono text-sm">{error}</p>}
 
           {transcribing && (
-            <p className="font-mono text-sm text-on-surface-variant">Transcribing...</p>
+            <p className="font-mono text-sm text-on-surface-variant">Uploading and transcribing...</p>
+          )}
+
+          {scoring && (
+            <p className="font-mono text-sm text-on-surface-variant">
+              Scoring your answer (this takes 20–40 seconds)...
+            </p>
           )}
 
           {transcript && (
-            <div className="bg-surface-container-low border border-outline-variant rounded-lg p-6">
+            <div className="surface-elevated-low p-6">
               <p className="font-mono text-xs text-on-surface-variant mb-2">Your Answer</p>
               <p className="font-body text-base leading-relaxed">{transcript}</p>
             </div>
           )}
 
-          {transcript && (
+          {score && (
+            <div className="surface-elevated p-6 space-y-4">
+              <p className="font-mono text-xs text-on-surface-variant">Scores</p>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                {DIMENSIONS.map((d) => (
+                  <div key={d.key} className="surface-elevated-low p-3">
+                    <p className="font-mono text-xs text-on-surface-variant mb-1">{d.label}</p>
+                    <p className="font-display text-2xl font-bold text-primary">
+                      {(score[d.key] as number) ?? "–"}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              {score.strengths?.length > 0 && (
+                <div>
+                  <p className="font-mono text-xs text-tertiary mb-1">Strengths</p>
+                  <ul className="font-body text-sm list-disc list-inside space-y-1">
+                    {score.strengths.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              {score.improvements?.length > 0 && (
+                <div>
+                  <p className="font-mono text-xs text-error mb-1">Improvements</p>
+                  <ul className="font-body text-sm list-disc list-inside space-y-1">
+                    {score.improvements.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {transcript && !scoring && (
             <button
               onClick={saveAnswerAndNext}
-              className="bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
+              className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
             >
               {currentIndex + 1 >= questions.length ? "Finish Interview" : "Next Question →"}
             </button>
@@ -317,29 +408,55 @@ export default function Interview() {
     );
   }
 
-  // Summary
+  // ---------- Summary screen ----------
+  const scored = answers.filter((a) => a.score);
+  const avg = (key: keyof ScoreResult) =>
+    scored.length
+      ? (
+          scored.reduce((sum, a) => sum + ((a.score?.[key] as number) || 0), 0) /
+          scored.length
+        ).toFixed(1)
+      : "–";
+
   return (
-    <main className="min-h-screen bg-surface text-on-surface p-8">
+    <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up">
       <div className="max-w-3xl mx-auto space-y-6">
         <h1 className="font-display text-3xl font-bold text-primary">Interview Complete</h1>
         <p className="font-body text-on-surface-variant">
           {role} · {level} · {answers.length} questions answered
         </p>
 
+        {scored.length > 0 && (
+          <div className="surface-elevated p-6">
+            <p className="font-mono text-xs text-on-surface-variant mb-3">Average Scores</p>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+              {DIMENSIONS.map((d) => (
+                <div key={d.key} className="surface-elevated-low p-3">
+                  <p className="font-mono text-xs text-on-surface-variant mb-1">{d.label}</p>
+                  <p className="font-display text-2xl font-bold text-primary">{avg(d.key)}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="space-y-4">
           {answers.map((a, i) => (
-            <div
-              key={i}
-              className="bg-surface-container border border-outline-variant rounded-lg p-6"
-            >
-              <p className="font-mono text-xs text-on-surface-variant mb-2">
-                Q{i + 1}
-              </p>
+            <div key={i} className="surface-elevated p-6">
+              <p className="font-mono text-xs text-on-surface-variant mb-2">Q{i + 1}</p>
               <p className="font-body text-base mb-3">{a.question}</p>
-              <p className="font-mono text-xs text-on-surface-variant mb-1">
-                Your answer
-              </p>
-              <p className="font-body text-base leading-relaxed">{a.transcript}</p>
+              <p className="font-mono text-xs text-on-surface-variant mb-1">Your answer</p>
+              <p className="font-body text-base leading-relaxed mb-3">{a.transcript}</p>
+
+              {a.score && (
+                <div className="flex gap-3 flex-wrap font-mono text-xs">
+                  {DIMENSIONS.map((d) => (
+                    <span key={d.key} className="text-on-surface-variant">
+                      {d.label}: <span className="text-primary">{a.score?.[d.key]}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -350,7 +467,7 @@ export default function Interview() {
             setAnswers([]);
             setQuestions([]);
           }}
-          className="bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
+          className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
         >
           Start New Interview
         </button>

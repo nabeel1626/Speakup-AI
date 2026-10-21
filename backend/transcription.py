@@ -1,44 +1,46 @@
-import subprocess
-import tempfile
 import os
-import torch
-from transformers import pipeline
+import tempfile
+import httpx
 
 
-transcriber = pipeline(
-    "automatic-speech-recognition",
-    model="openai/whisper-small",
-    dtype=torch.float32,
-    device=-1,
+HF_API_TOKEN = os.getenv("HF_API_TOKEN")
+HF_WHISPER_URL = (
+    "https://api-inference.huggingface.co/models/openai/whisper-small"
 )
 
 
-def transcribe_audio_file(file_path: str) -> str:
-    """Convert input audio to WAV via FFmpeg, then transcribe with Whisper."""
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as wav_tmp:
-        wav_path = wav_tmp.name
-
-    try:
-        result = subprocess.run(
-            [
-                "ffmpeg",
-                "-y",
-                "-i", file_path,
-                "-ar", "16000",
-                "-ac", "1",
-                "-c:a", "pcm_s16le",
-                wav_path,
-            ],
-            capture_output=True,
-            text=True,
+async def transcribe_audio_file(file_path: str) -> str:
+    """Send a local audio file to Hugging Face's hosted Whisper and return text."""
+    if not HF_API_TOKEN:
+        raise RuntimeError(
+            "HF_API_TOKEN is not configured. "
+            "Create one at https://huggingface.co/settings/tokens"
         )
-        if result.returncode != 0:
-            raise RuntimeError(f"FFmpeg conversion failed: {result.stderr.strip()[-300:]}")
 
-        output = transcriber(wav_path)
-        return output["text"].strip()
-    finally:
-        try:
-            os.remove(wav_path)
-        except OSError:
-            pass
+    with open(file_path, "rb") as f:
+        audio_bytes = f.read()
+
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        response = await client.post(
+            HF_WHISPER_URL,
+            headers={
+                "Authorization": f"Bearer {HF_API_TOKEN}",
+                "Content-Type": "application/octet-stream",
+            },
+            content=audio_bytes,
+        )
+
+    if response.status_code == 503:
+        # Model is warming up on HF's side — safe to retry
+        raise RuntimeError(
+            "Hugging Face model is loading. Try again in 20 seconds."
+        )
+    if response.status_code != 200:
+        raise RuntimeError(
+            f"HF Whisper error {response.status_code}: {response.text[:200]}"
+        )
+
+    data = response.json()
+    if isinstance(data, dict) and "text" in data:
+        return data["text"].strip()
+    raise RuntimeError(f"Unexpected HF response: {str(data)[:200]}")
