@@ -269,6 +269,11 @@ export default function Interview() {
           >
             {loading ? "Loading..." : "Start Interview"}
           </button>
+
+          <p className="font-mono text-xs text-on-surface-variant mt-2">
+            Note: In the deployed version, audio is processed by Groq&apos;s API.
+            The local version processes audio entirely on-device.
+          </p>
         </div>
       </main>
     );
@@ -344,7 +349,7 @@ export default function Interview() {
 
           {scoring && (
             <p className="font-mono text-sm text-on-surface-variant">
-              Scoring your answer (this takes 20–40 seconds)...
+              Scoring your answer...
             </p>
           )}
 
