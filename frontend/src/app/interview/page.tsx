@@ -213,67 +213,83 @@ export default function Interview() {
   }
 
   // ---------- Setup screen ----------
-  if (stage === "setup") {
+    if (stage === "setup") {
     return (
-      <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up">
-        <h1 className="font-display text-3xl font-bold text-primary mb-6">
-          Start a Mock Interview
-        </h1>
-        <div className="surface-elevated p-6 max-w-xl space-y-4">
-          <label className="block">
-            <span className="font-mono text-xs text-on-surface-variant block mb-1">Role</span>
-            <select
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
-              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
-            >
-              <option>Frontend Developer</option>
-              <option>Data Analyst</option>
-            </select>
-          </label>
+      <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up flex flex-col items-center justify-center">
+        <div className="w-full max-w-2xl space-y-8">
+          <div>
+            <h1 className="font-display text-4xl font-bold text-primary mb-2">
+              Start a Mock Interview
+            </h1>
+            <p className="font-body text-on-surface-variant">
+              Configure your AI interview session.
+            </p>
+          </div>
 
-          <label className="block">
-            <span className="font-mono text-xs text-on-surface-variant block mb-1">Level</span>
-            <select
-              value={level}
-              onChange={(e) => setLevel(e.target.value)}
-              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
-            >
-              <option>Entry-level</option>
-              <option>Mid-level</option>
-              <option>Senior</option>
-            </select>
-          </label>
+          <div className="surface-elevated p-8 space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <label className="block">
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
+                  Role
+                </span>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="input-field"
+                >
+                  <option>Frontend Developer</option>
+                  <option>Data Analyst</option>
+                </select>
+              </label>
 
-          <label className="block">
-            <span className="font-mono text-xs text-on-surface-variant block mb-1">Microphone</span>
-            <select
-              value={selectedDeviceId}
-              onChange={(e) => setSelectedDeviceId(e.target.value)}
-              className="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 w-full text-on-surface"
-            >
-              {devices.map((d) => (
-                <option key={d.deviceId} value={d.deviceId}>
-                  {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
-                </option>
-              ))}
-            </select>
-          </label>
+              <label className="block">
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
+                  Level
+                </span>
+                <select
+                  value={level}
+                  onChange={(e) => setLevel(e.target.value)}
+                  className="input-field"
+                >
+                  <option>Entry-level</option>
+                  <option>Mid-level</option>
+                  <option>Senior</option>
+                </select>
+              </label>
+            </div>
 
-          {error && <p className="text-error font-mono text-sm">{error}</p>}
+            <label className="block">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
+                Microphone
+              </span>
+              <select
+                value={selectedDeviceId}
+                onChange={(e) => setSelectedDeviceId(e.target.value)}
+                className="input-field"
+              >
+                {devices.map((d) => (
+                  <option key={d.deviceId} value={d.deviceId}>
+                    {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
+                  </option>
+                ))}
+              </select>
+            </label>
 
-          <button
-            onClick={startInterview}
-            disabled={loading}
-            className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded disabled:opacity-50"
-          >
-            {loading ? "Loading..." : "Start Interview"}
-          </button>
+            {error && <p className="text-error font-mono text-sm">{error}</p>}
 
-          <p className="font-mono text-xs text-on-surface-variant mt-2">
-            Note: In the deployed version, audio is processed by Groq&apos;s API.
-            The local version processes audio entirely on-device.
-          </p>
+            <div className="pt-4 border-t border-outline-variant/50">
+              <button
+                onClick={startInterview}
+                disabled={loading}
+                className="btn-primary bg-primary text-[#1000a9] w-full font-semibold px-6 py-4 rounded disabled:opacity-50 text-lg"
+              >
+                {loading ? "Loading..." : "Start Interview →"}
+              </button>
+              <p className="font-mono text-xs text-on-surface-variant mt-4 text-center">
+                Note: In the deployed version, audio is processed by Groq&apos;s API.
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     );
@@ -322,7 +338,7 @@ export default function Interview() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-3 pt-2">
             {!recording ? (
               <button
                 onClick={startRecording}
