@@ -17,6 +17,7 @@ type ScoreResult = {
   confidence: number;
   strengths: string[];
   improvements: string[];
+  follow_up_question?: string | null;
 };
 
 type AnswerRecord = {
@@ -39,11 +40,15 @@ export default function Interview() {
   const [stage, setStage] = useState<Stage>("setup");
   const [role, setRole] = useState("Frontend Developer");
   const [level, setLevel] = useState("Entry-level");
+  const [resume, setResume] = useState<File | null>(null);
+  
   const [questions, setQuestions] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<AnswerRecord[]>([]);
+  
   const [transcript, setTranscript] = useState("");
   const [score, setScore] = useState<ScoreResult | null>(null);
+  
   const [recording, setRecording] = useState(false);
   const [transcribing, setTranscribing] = useState(false);
   const [scoring, setScoring] = useState(false);
@@ -60,16 +65,12 @@ export default function Interview() {
   useEffect(() => {
     async function loadDevices() {
       try {
-        await navigator.mediaDevices
-          .getUserMedia({ audio: true })
-          .then((s) => s.getTracks().forEach((t) => t.stop()));
+        await navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => s.getTracks().forEach((t) => t.stop()));
         const list = await navigator.mediaDevices.enumerateDevices();
         const mics = list.filter((d) => d.kind === "audioinput");
         setDevices(mics);
         if (mics.length && !selectedDeviceId) setSelectedDeviceId(mics[0].deviceId);
-      } catch {
-        // ignore
-      }
+      } catch { /* ignore */ }
     }
     loadDevices();
   }, []);
@@ -78,13 +79,26 @@ export default function Interview() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/generate-questions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, level }),
-      });
+      let res;
+      if (resume) {
+        // Use resume-based generation
+        const form = new FormData();
+        form.append("resume", resume);
+        form.append("role", role);
+        form.append("level", level);
+        res = await fetch("/api/generate-questions-resume", { method: "POST", body: form });
+      } else {
+        // Use default fallback generation
+        res = await fetch("/api/generate-questions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ role, level }),
+        });
+      }
+
       if (!res.ok) throw new Error(`Backend returned ${res.status}`);
       const data: QuestionResponse = await res.json();
+      
       setQuestions(data.questions);
       setCurrentIndex(0);
       setAnswers([]);
@@ -123,9 +137,7 @@ export default function Interview() {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: selectedDeviceId ? { deviceId: { exact: selectedDeviceId } } : true,
       });
-      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus")
-        ? "audio/webm;codecs=opus"
-        : "audio/webm";
+      const mimeType = MediaRecorder.isTypeSupported("audio/webm;codecs=opus") ? "audio/webm;codecs=opus" : "audio/webm";
       const recorder = new MediaRecorder(stream, { mimeType });
       recorderRef.current = recorder;
       chunksRef.current = [];
@@ -137,7 +149,6 @@ export default function Interview() {
       recorder.onstop = async () => {
         stream.getTracks().forEach((t) => t.stop());
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        console.log("Blob size:", blob.size, "bytes");
         if (blob.size < 5000) {
           setError(`Recording too small (${blob.size} bytes). Speak louder or pick another mic.`);
           return;
@@ -145,18 +156,13 @@ export default function Interview() {
 
         setTranscribing(true);
         try {
-          // 1. Send audio to Next.js API route → Groq Whisper
           const form = new FormData();
           form.append("audio", blob, "answer.webm");
-          const tRes = await fetch("/api/transcribe", {
-            method: "POST",
-            body: form,
-          });
+          const tRes = await fetch("/api/transcribe", { method: "POST", body: form });
           if (!tRes.ok) throw new Error(`Transcribe returned ${tRes.status}`);
           const tData = await tRes.json();
           setTranscript(tData.transcript || "(empty)");
 
-          // 2. Send transcript to Next.js API route → Groq LLM
           setTranscribing(false);
           setScoring(true);
           const sRes = await fetch("/api/score-answer", {
@@ -205,6 +211,16 @@ export default function Interview() {
     setTranscript("");
     setScore(null);
 
+    // Check for Follow-Up Question
+    if (score?.follow_up_question) {
+      // Insert the follow-up as the very next question in the array
+      const newQuestions = [...questions];
+      newQuestions.splice(currentIndex + 1, 0, `Follow-up: ${score.follow_up_question}`);
+      setQuestions(newQuestions);
+      setCurrentIndex(currentIndex + 1);
+      return;
+    }
+
     if (currentIndex + 1 >= questions.length) {
       setStage("summary");
     } else {
@@ -212,45 +228,36 @@ export default function Interview() {
     }
   }
 
+  function shareReport() {
+    const data = encodeURIComponent(JSON.stringify({ role, level, answers }));
+    const url = `${window.location.origin}/report?data=${data}`;
+    navigator.clipboard.writeText(url);
+    alert("Shareable link copied to clipboard!");
+  }
+
   // ---------- Setup screen ----------
-    if (stage === "setup") {
+  if (stage === "setup") {
     return (
       <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up flex flex-col items-center justify-center">
         <div className="w-full max-w-2xl space-y-8">
           <div>
-            <h1 className="font-display text-4xl font-bold text-primary mb-2">
-              Start a Mock Interview
-            </h1>
-            <p className="font-body text-on-surface-variant">
-              Configure your AI interview session.
-            </p>
+            <h1 className="font-display text-4xl font-bold text-primary mb-2">Start a Mock Interview</h1>
+            <p className="font-body text-on-surface-variant">Configure your AI interview session.</p>
           </div>
 
           <div className="surface-elevated p-8 space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <label className="block">
-                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
-                  Role
-                </span>
-                <select
-                  value={role}
-                  onChange={(e) => setRole(e.target.value)}
-                  className="input-field"
-                >
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Role</span>
+                <select value={role} onChange={(e) => setRole(e.target.value)} className="input-field">
                   <option>Frontend Developer</option>
                   <option>Data Analyst</option>
                 </select>
               </label>
 
               <label className="block">
-                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
-                  Level
-                </span>
-                <select
-                  value={level}
-                  onChange={(e) => setLevel(e.target.value)}
-                  className="input-field"
-                >
+                <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Level</span>
+                <select value={level} onChange={(e) => setLevel(e.target.value)} className="input-field">
                   <option>Entry-level</option>
                   <option>Mid-level</option>
                   <option>Senior</option>
@@ -259,20 +266,25 @@ export default function Interview() {
             </div>
 
             <label className="block">
-              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">
-                Microphone
-              </span>
-              <select
-                value={selectedDeviceId}
-                onChange={(e) => setSelectedDeviceId(e.target.value)}
-                className="input-field"
-              >
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Microphone</span>
+              <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} className="input-field">
                 {devices.map((d) => (
                   <option key={d.deviceId} value={d.deviceId}>
                     {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
                   </option>
                 ))}
               </select>
+            </label>
+
+            <label className="block">
+              <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Resume (Optional)</span>
+              <input 
+                type="file" 
+                accept=".pdf" 
+                onChange={(e) => setResume(e.target.files?.[0] || null)}
+                className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-[#1000a9] hover:file:bg-primary-container"
+              />
+              <p className="text-xs text-on-surface-variant mt-2">Upload a PDF to generate personalized questions.</p>
             </label>
 
             {error && <p className="text-error font-mono text-sm">{error}</p>}
@@ -283,7 +295,7 @@ export default function Interview() {
                 disabled={loading}
                 className="btn-primary bg-primary text-[#1000a9] w-full font-semibold px-6 py-4 rounded disabled:opacity-50 text-lg"
               >
-                {loading ? "Loading..." : "Start Interview →"}
+                {loading ? "Analyzing..." : "Start Interview →"}
               </button>
               <p className="font-mono text-xs text-on-surface-variant mt-4 text-center">
                 Note: In the deployed version, audio is processed by Groq&apos;s API.
@@ -304,16 +316,11 @@ export default function Interview() {
             <h1 className="font-display text-2xl font-bold text-primary">
               Question {currentIndex + 1} of {questions.length}
             </h1>
-            <span className="font-mono text-xs text-on-surface-variant">
-              {role} · {level}
-            </span>
+            <span className="font-mono text-xs text-on-surface-variant">{role} · {level}</span>
           </div>
 
           <div className="w-full h-1 bg-surface-container-highest rounded overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all"
-              style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-            />
+            <div className="h-full bg-primary transition-all" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
           </div>
 
           <div className="surface-elevated p-6">
@@ -321,17 +328,11 @@ export default function Interview() {
             <p className="font-body text-xl leading-relaxed">{questions[currentIndex]}</p>
             <div className="mt-6 flex gap-3">
               {!speaking ? (
-                <button
-                  onClick={speakCurrentQuestion}
-                  className="btn-secondary bg-secondary text-[#00354a] font-semibold px-5 py-2 rounded"
-                >
+                <button onClick={speakCurrentQuestion} className="btn-secondary bg-secondary text-[#00354a] font-semibold px-5 py-2 rounded">
                   ▶ Read Aloud
                 </button>
               ) : (
-                <button
-                  onClick={stopSpeaking}
-                  className="btn-danger bg-error text-[#690005] font-semibold px-5 py-2 rounded"
-                >
+                <button onClick={stopSpeaking} className="btn-danger bg-error text-[#690005] font-semibold px-5 py-2 rounded">
                   ■ Stop
                 </button>
               )}
@@ -340,34 +341,19 @@ export default function Interview() {
 
           <div className="flex gap-3 pt-2">
             {!recording ? (
-              <button
-                onClick={startRecording}
-                disabled={transcribing || scoring}
-                className="btn-danger bg-error text-[#690005] font-semibold px-6 py-3 rounded disabled:opacity-50"
-              >
+              <button onClick={startRecording} disabled={transcribing || scoring} className="btn-danger bg-error text-[#690005] font-semibold px-6 py-3 rounded disabled:opacity-50">
                 ● Record Answer
               </button>
             ) : (
-              <button
-                onClick={stopRecording}
-                className="btn-secondary bg-secondary text-[#00354a] font-semibold px-6 py-3 rounded"
-              >
+              <button onClick={stopRecording} className="btn-secondary bg-secondary text-[#00354a] font-semibold px-6 py-3 rounded">
                 ■ Stop
               </button>
             )}
           </div>
 
           {error && <p className="text-error font-mono text-sm">{error}</p>}
-
-          {transcribing && (
-            <p className="font-mono text-sm text-on-surface-variant">Uploading and transcribing...</p>
-          )}
-
-          {scoring && (
-            <p className="font-mono text-sm text-on-surface-variant">
-              Scoring your answer...
-            </p>
-          )}
+          {transcribing && <p className="font-mono text-sm text-on-surface-variant">Transcribing...</p>}
+          {scoring && <p className="font-mono text-sm text-on-surface-variant">Scoring...</p>}
 
           {transcript && (
             <div className="surface-elevated-low p-6">
@@ -383,9 +369,7 @@ export default function Interview() {
                 {DIMENSIONS.map((d) => (
                   <div key={d.key} className="surface-elevated-low p-3">
                     <p className="font-mono text-xs text-on-surface-variant mb-1">{d.label}</p>
-                    <p className="font-display text-2xl font-bold text-primary">
-                      {(score[d.key] as number) ?? "–"}
-                    </p>
+                    <p className="font-display text-2xl font-bold text-primary">{(score[d.key] as number) ?? "–"}</p>
                   </div>
                 ))}
               </div>
@@ -394,9 +378,7 @@ export default function Interview() {
                 <div>
                   <p className="font-mono text-xs text-tertiary mb-1">Strengths</p>
                   <ul className="font-body text-sm list-disc list-inside space-y-1">
-                    {score.strengths.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
+                    {score.strengths.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
                 </div>
               )}
@@ -405,21 +387,23 @@ export default function Interview() {
                 <div>
                   <p className="font-mono text-xs text-error mb-1">Improvements</p>
                   <ul className="font-body text-sm list-disc list-inside space-y-1">
-                    {score.improvements.map((s, i) => (
-                      <li key={i}>{s}</li>
-                    ))}
+                    {score.improvements.map((s, i) => <li key={i}>{s}</li>)}
                   </ul>
+                </div>
+              )}
+
+              {score.follow_up_question && (
+                <div className="bg-primary/10 border border-primary/30 rounded p-4 mt-4">
+                  <p className="font-mono text-xs text-primary font-bold mb-1">Adaptive Follow-up triggered</p>
+                  <p className="font-body text-sm">You scored low on a dimension, so the AI will ask a deeper follow-up question next.</p>
                 </div>
               )}
             </div>
           )}
 
           {transcript && !scoring && (
-            <button
-              onClick={saveAnswerAndNext}
-              className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
-            >
-              {currentIndex + 1 >= questions.length ? "Finish Interview" : "Next Question →"}
+            <button onClick={saveAnswerAndNext} className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded">
+              {score?.follow_up_question ? "Answer Follow-up →" : currentIndex + 1 >= questions.length ? "Finish Interview" : "Next Question →"}
             </button>
           )}
         </div>
@@ -430,20 +414,20 @@ export default function Interview() {
   // ---------- Summary screen ----------
   const scored = answers.filter((a) => a.score);
   const avg = (key: keyof ScoreResult) =>
-    scored.length
-      ? (
-          scored.reduce((sum, a) => sum + ((a.score?.[key] as number) || 0), 0) /
-          scored.length
-        ).toFixed(1)
-      : "–";
+    scored.length ? (scored.reduce((sum, a) => sum + ((a.score?.[key] as number) || 0), 0) / scored.length).toFixed(1) : "–";
 
   return (
     <main className="min-h-screen bg-surface text-on-surface p-8 animate-fade-in-up">
       <div className="max-w-3xl mx-auto space-y-6">
-        <h1 className="font-display text-3xl font-bold text-primary">Interview Complete</h1>
-        <p className="font-body text-on-surface-variant">
-          {role} · {level} · {answers.length} questions answered
-        </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="font-display text-3xl font-bold text-primary">Interview Complete</h1>
+            <p className="font-body text-on-surface-variant">{role} · {level} · {answers.length} questions answered</p>
+          </div>
+          <button onClick={shareReport} className="btn-secondary bg-secondary text-[#00354a] font-semibold px-4 py-2 rounded text-sm flex items-center gap-2">
+            🔗 Share Report
+          </button>
+        </div>
 
         {scored.length > 0 && (
           <div className="surface-elevated p-6">
@@ -480,14 +464,7 @@ export default function Interview() {
           ))}
         </div>
 
-        <button
-          onClick={() => {
-            setStage("setup");
-            setAnswers([]);
-            setQuestions([]);
-          }}
-          className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded"
-        >
+        <button onClick={() => { setStage("setup"); setAnswers([]); setQuestions([]); setResume(null); }} className="btn-primary bg-primary text-[#1000a9] font-semibold px-6 py-3 rounded">
           Start New Interview
         </button>
       </div>

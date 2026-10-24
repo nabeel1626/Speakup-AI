@@ -13,6 +13,8 @@ Score the candidate's answer on a 1-5 integer scale across five dimensions:
 
 Also provide 2-3 strengths and 2-3 improvements, one short sentence each.
 
+CRITICAL: If ANY dimension score is 1 or 2, generate a "follow_up_question" that probes deeper into that specific weakness. If all scores are 3 or higher, set "follow_up_question" to null.
+
 Return ONLY valid JSON with exactly this shape:
 {
   "relevance": <1-5>,
@@ -21,7 +23,8 @@ Return ONLY valid JSON with exactly this shape:
   "clarity": <1-5>,
   "confidence": <1-5>,
   "strengths": ["...", "..."],
-  "improvements": ["...", "..."]
+  "improvements": ["...", "..."],
+  "follow_up_question": "string or null"
 }`;
 
 export async function POST(req: Request) {

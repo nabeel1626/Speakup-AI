@@ -1,36 +1,81 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpeakUp AI
 
-## Getting Started
+SpeakUp AI is an AI-powered voice mock interviewer. The user selects a role
+and experience level, the AI asks questions by voice, records the spoken
+answers, transcribes them, and scores each answer against a five-dimension
+rubric with instant feedback.
 
-First, run the development server:
+## Live Application
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- **Deployed app:** [https://speakup-ai-oomc.vercel.app/interview](https://speakup-ai-oomc.vercel.app/interview)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The deployed version runs entirely on Vercel. It uses Next.js API routes
+to call Groq for speech-to-text (Whisper) and answer scoring (GPT-OSS).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## What's Implemented
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Area | Status |
+| --- | --- |
+| Interview flow (setup → questions → summary) | ✅ Working |
+| Browser text-to-speech for reading questions | ✅ Working |
+| Microphone recording | ✅ Working |
+| Speech-to-text (deployed: Groq Whisper) | ✅ Working |
+| Speech-to-text (local: HuggingFace Whisper) | ✅ Working |
+| Answer scoring (deployed: Groq GPT-OSS) | ✅ Working |
+| Answer scoring (local: Phi-3-mini) | ✅ Working |
+| Role and level selection (2 roles × 3 levels) | ✅ Working |
+| Resume-based question personalization | ✅ Working |
+| Adaptive follow-up questions (on low scores) | ✅ Working |
+| Shareable report cards (URL-encoded) | ✅ Working |
+| Per-question score card (5 dimensions + strengths + improvements) | ✅ Working |
+| Final summary with per-dimension averages | ✅ Working |
+| Session persistence / history | ❌ Not in scope |
+| User accounts | ❌ Not in scope |
 
-## Learn More
+## Architecture
 
-To learn more about Next.js, take a look at the following resources:
+The project has **two AI backends**:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Deployed (Vercel + Groq)** — no Python server required.
+   - Frontend calls `/api/generate-questions`, `/api/transcribe`, and
+     `/api/score-answer` in Next.js.
+   - Next.js API routes call Groq's API.
+   - Fast, free tier, no local models to download.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Local (FastAPI + HuggingFace)** — for offline development.
+   - FastAPI backend in `backend/` runs local Whisper and Phi-3.
+   - Toggle with the `AI_MODE` environment variable:
+     - `AI_MODE=local` → uses local models
+     - `AI_MODE=cloud` → uses Groq
 
-## Deploy on Vercel
+The deployed version does not use the Python backend. It exists as a
+reference implementation and for offline demos.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Key Features
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Resume Personalization:** Upload a PDF on the setup screen. The AI parses the text and generates interview questions based on your actual experience and target role.
+- **Adaptive Follow-ups:** If you score a 1 or 2 on any rubric dimension, the AI immediately generates a targeted follow-up question to probe your weakness.
+- **Shareable Reports:** After finishing an interview, click "Share Report" to copy a read-only URL containing your full Q&A and scores (stored in the URL, no database needed).
+
+## Project Links
+
+- [GitHub repository](https://github.com/nabeel1626/Speakup-AI)
+- [Design document](docs/DESIGN.md) — MVP scope, screens, journeys
+- [Mockups](docs/MOCKUPS.md) — design evidence from Stitch AI
+- [Design system](docs/DESIGN_SYSTEM.md) — colors, typography, spacing
+- [Scoring rubric and prompt design](docs/scoring-rubric-and-prompt-design.md)
+- [Corrections log](docs/CORRECTIONS.md) — transparency on early reporting
+- [AI usage disclosure](AI_USAGE.md)
+
+## Run Locally
+
+You need:
+- Node.js 18+ with npm
+- Python 3.11+ (only if running the local backend)
+
+### Frontend (required)
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
