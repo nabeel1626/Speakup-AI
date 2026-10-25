@@ -1,3 +1,4 @@
+import { checkRateLimit, getClientIp } from "../rate-limit";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -28,6 +29,9 @@ Return ONLY valid JSON with exactly this shape:
 }`;
 
 export async function POST(req: Request) {
+  if (!checkRateLimit(getClientIp(req), 10, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+  }
   try {
     const { question, answer, role, level } = await req.json();
 
@@ -60,9 +64,25 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Scoring failed" }, { status: res.status });
     }
 
-    const data = await res.json();
+        const data = await res.json();
     const content = data.choices[0].message.content;
-    return NextResponse.json(JSON.parse(content));
+    
+    // Validate that the AI returned valid JSON with the correct numbers
+    let parsed;
+    try {
+      parsed = JSON.parse(content);
+    } catch {
+      return NextResponse.json({ error: "AI returned invalid format" }, { status: 502 });
+    }
+
+    const requiredKeys = ["relevance", "technical_depth", "structure", "clarity", "confidence"];
+    for (const key of requiredKeys) {
+      if (typeof parsed[key] !== "number" || parsed[key] < 1 || parsed[key] > 5) {
+        return NextResponse.json({ error: "AI returned invalid scores" }, { status: 502 });
+      }
+    }
+
+    return NextResponse.json(parsed);
   } catch (error) {
     console.error("Score route error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

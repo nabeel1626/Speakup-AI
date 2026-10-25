@@ -1,9 +1,14 @@
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "../rate-limit";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
 export async function POST(req: Request) {
+  if (!checkRateLimit(getClientIp(req), 10, 60_000)) {
+    return NextResponse.json({ error: "Too many requests. Please wait a minute." }, { status: 429 });
+  }
+
   try {
     const form = await req.formData();
     const file = form.get("audio") as File;
@@ -31,7 +36,20 @@ export async function POST(req: Request) {
     }
 
     const data = await res.json();
-    return NextResponse.json({ transcript: data.text });
+    const rawText = (data.text || "").trim();
+
+    // Reject empty, tiny, or clearly hallucinated transcripts
+    const wordCount = rawText.split(/\s+/).filter(Boolean).length;
+    const lettersOnly = rawText.replace(/[^a-zA-Z]/g, "");
+
+    if (!rawText || wordCount < 3 || lettersOnly.length < 5) {
+      return NextResponse.json(
+        { error: "We couldn't hear you clearly. Please try again and speak for at least 3 seconds." },
+        { status: 422 }
+      );
+    }
+
+    return NextResponse.json({ transcript: rawText });
   } catch (error) {
     console.error("Transcribe route error:", error);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

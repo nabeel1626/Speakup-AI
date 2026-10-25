@@ -55,6 +55,7 @@ export default function Interview() {
   const [speaking, setSpeaking] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [followUpCount, setFollowUpCount] = useState(0);
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState("");
@@ -63,16 +64,18 @@ export default function Interview() {
   const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
-    async function loadDevices() {
+    // Check if permission is ALREADY granted without triggering a new prompt
+    async function checkDevices() {
       try {
-        await navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => s.getTracks().forEach((t) => t.stop()));
         const list = await navigator.mediaDevices.enumerateDevices();
-        const mics = list.filter((d) => d.kind === "audioinput");
-        setDevices(mics);
-        if (mics.length && !selectedDeviceId) setSelectedDeviceId(mics[0].deviceId);
+        const mics = list.filter((d) => d.kind === "audioinput" && d.label !== "");
+        if (mics.length > 0) {
+          setDevices(mics);
+          if (!selectedDeviceId) setSelectedDeviceId(mics[0].deviceId);
+        }
       } catch { /* ignore */ }
     }
-    loadDevices();
+    checkDevices();
   }, []);
 
   async function startInterview() {
@@ -81,14 +84,12 @@ export default function Interview() {
     try {
       let res;
       if (resume) {
-        // Use resume-based generation
         const form = new FormData();
         form.append("resume", resume);
         form.append("role", role);
         form.append("level", level);
         res = await fetch("/api/generate-questions-resume", { method: "POST", body: form });
       } else {
-        // Use default fallback generation
         res = await fetch("/api/generate-questions", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -104,6 +105,7 @@ export default function Interview() {
       setAnswers([]);
       setTranscript("");
       setScore(null);
+      setFollowUpCount(0);
       setStage("interview");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to start");
@@ -159,12 +161,20 @@ export default function Interview() {
           const form = new FormData();
           form.append("audio", blob, "answer.webm");
           const tRes = await fetch("/api/transcribe", { method: "POST", body: form });
+          
+          if (tRes.status === 422) {
+            const errData = await tRes.json();
+            setError(errData.error || "Could not understand the answer. Please try again.");
+            return;
+          }
           if (!tRes.ok) throw new Error(`Transcribe returned ${tRes.status}`);
+          
           const tData = await tRes.json();
           setTranscript(tData.transcript || "(empty)");
 
           setTranscribing(false);
           setScoring(true);
+          
           const sRes = await fetch("/api/score-answer", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -211,15 +221,16 @@ export default function Interview() {
     setTranscript("");
     setScore(null);
 
-    // Check for Follow-Up Question
-    if (score?.follow_up_question) {
-      // Insert the follow-up as the very next question in the array
+    if (score?.follow_up_question && followUpCount < 1) {
       const newQuestions = [...questions];
       newQuestions.splice(currentIndex + 1, 0, `Follow-up: ${score.follow_up_question}`);
       setQuestions(newQuestions);
+      setFollowUpCount(followUpCount + 1);
       setCurrentIndex(currentIndex + 1);
       return;
     }
+
+    setFollowUpCount(0);
 
     if (currentIndex + 1 >= questions.length) {
       setStage("summary");
@@ -267,24 +278,43 @@ export default function Interview() {
 
             <label className="block">
               <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Microphone</span>
-              <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} className="input-field">
-                {devices.map((d) => (
-                  <option key={d.deviceId} value={d.deviceId}>
-                    {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
-                  </option>
-                ))}
-              </select>
+              {devices.length === 0 ? (
+                <button
+                  onClick={async () => {
+                    try {
+                      await navigator.mediaDevices.getUserMedia({ audio: true }).then((s) => s.getTracks().forEach((t) => t.stop()));
+                      const list = await navigator.mediaDevices.enumerateDevices();
+                      const mics = list.filter((d) => d.kind === "audioinput");
+                      setDevices(mics);
+                      if (mics.length) setSelectedDeviceId(mics[0].deviceId);
+                    } catch {
+                      alert("Microphone access was denied. Please allow it in your browser settings.");
+                    }
+                  }}
+                  className="input-field text-left text-primary hover:bg-surface-container-lowest"
+                >
+                  🎤 Click to allow microphone access
+                </button>
+              ) : (
+                <select value={selectedDeviceId} onChange={(e) => setSelectedDeviceId(e.target.value)} className="input-field">
+                  {devices.map((d) => (
+                    <option key={d.deviceId} value={d.deviceId}>
+                      {d.label || `Microphone ${d.deviceId.slice(0, 6)}`}
+                    </option>
+                  ))}
+                </select>
+              )}
             </label>
 
             <label className="block">
               <span className="font-mono text-xs font-semibold uppercase tracking-wider text-on-surface-variant block mb-2">Resume (Optional)</span>
               <input 
                 type="file" 
-                accept=".pdf" 
+                accept=".pdf,.docx,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" 
                 onChange={(e) => setResume(e.target.files?.[0] || null)}
                 className="input-field file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-[#1000a9] hover:file:bg-primary-container"
               />
-              <p className="text-xs text-on-surface-variant mt-2">Upload a PDF to generate personalized questions.</p>
+              <p className="text-xs text-on-surface-variant mt-2">Upload a PDF or Word (.docx) file to generate personalized questions.</p>
             </label>
 
             {error && <p className="text-error font-mono text-sm">{error}</p>}
@@ -297,9 +327,16 @@ export default function Interview() {
               >
                 {loading ? "Analyzing..." : "Start Interview →"}
               </button>
-              <p className="font-mono text-xs text-on-surface-variant mt-4 text-center">
-                Note: In the deployed version, audio is processed by Groq&apos;s API.
-              </p>
+              
+              <div className="mt-6 bg-surface-container-low border border-outline-variant/50 rounded-lg p-4 flex gap-3 items-start">
+                <span className="text-secondary text-lg leading-none pt-0.5">🛡️</span>
+                <div>
+                  <p className="font-mono text-xs font-bold text-on-surface mb-1">Privacy Note</p>
+                  <p className="font-body text-xs text-on-surface-variant leading-relaxed">
+                    In this deployed version, your audio is securely processed by Groq&apos;s Whisper API for transcription. If you run the app locally, audio is processed entirely on your device.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -316,7 +353,20 @@ export default function Interview() {
             <h1 className="font-display text-2xl font-bold text-primary">
               Question {currentIndex + 1} of {questions.length}
             </h1>
-            <span className="font-mono text-xs text-on-surface-variant">{role} · {level}</span>
+            <div className="flex gap-4 items-center">
+              <span className="font-mono text-xs text-on-surface-variant">{role} · {level}</span>
+              <button
+                onClick={() => {
+                  if (confirm("Quit the interview? Your current answers will be saved.")) {
+                    setStage("summary");
+                  }
+                }}
+                className="text-xs text-on-surface-variant hover:text-error transition-colors px-2 py-1"
+                title="Quit interview"
+              >
+                ✕ Quit
+              </button>
+            </div>
           </div>
 
           <div className="w-full h-1 bg-surface-container-highest rounded overflow-hidden">
@@ -339,7 +389,7 @@ export default function Interview() {
             </div>
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-2 items-center">
             {!recording ? (
               <button onClick={startRecording} disabled={transcribing || scoring} className="btn-danger bg-error text-[#690005] font-semibold px-6 py-3 rounded disabled:opacity-50">
                 ● Record Answer
@@ -347,6 +397,24 @@ export default function Interview() {
             ) : (
               <button onClick={stopRecording} className="btn-secondary bg-secondary text-[#00354a] font-semibold px-6 py-3 rounded">
                 ■ Stop
+              </button>
+            )}
+
+            {!recording && !transcribing && !scoring && (
+              <button
+                onClick={() => {
+                  setAnswers([...answers, { question: questions[currentIndex], transcript: "(skipped)" }]);
+                  setTranscript("");
+                  setScore(null);
+                  if (currentIndex + 1 >= questions.length) {
+                    setStage("summary");
+                  } else {
+                    setCurrentIndex(currentIndex + 1);
+                  }
+                }}
+                className="text-sm font-semibold text-on-surface-variant hover:text-on-surface px-4 py-3 transition-colors"
+              >
+                Skip →
               </button>
             )}
           </div>
